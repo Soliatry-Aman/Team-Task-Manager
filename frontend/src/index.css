@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  /* High-end system font stack */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f8fafc;
+  color: #0f172a;
+  min-height: 100vh;
+  /* Makes fonts look crisper on high-res screens */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Updated Button Reset: 
+   We removed 'background: none' to prevent ghosting 
+   on buttons that don't have utility classes assigned yet. */
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+}
+
+/* Subtle transitions for all interactive elements */
+button, a, .transition-all {
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  outline: none;
+}
+
+/* Clean focus states for better UX */
+button:focus-visible, 
+a:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
