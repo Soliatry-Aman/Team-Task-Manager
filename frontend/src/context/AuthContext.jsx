@@ -3,45 +3,99 @@ import { createContext, useContext, useEffect, useState } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+  // Safe default state
   const [user, setUser] = useState(null);
+
+  // Prevent app rendering before auth check
   const [loading, setLoading] = useState(true);
 
-  // Rehydrate user from localStorage on refresh
+  // Restore auth state on refresh
   useEffect(() => {
-    const savedUser = localStorage.getItem("user");
-    const token = localStorage.getItem("token");
-    
-    if (savedUser && token) {
-      try {
-        setUser(JSON.parse(savedUser));
-      } catch {
-        // Corrupted data — clear it
+    try {
+      const savedUser = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+
+      // If both exist, restore session
+      if (savedUser && token) {
+        const parsedUser = JSON.parse(savedUser);
+
+        // Extra safety check
+        if (parsedUser && typeof parsedUser === "object") {
+          setUser(parsedUser);
+        } else {
+          localStorage.removeItem("user");
+          localStorage.removeItem("token");
+        }
+      } else {
+        // Missing either token or user
         localStorage.removeItem("user");
         localStorage.removeItem("token");
       }
+    } catch (error) {
+      // Invalid JSON or corrupted storage
+      console.error("Auth restore failed:", error);
+
+      localStorage.removeItem("user");
+      localStorage.removeItem("token");
+
+      setUser(null);
+    } finally {
+      // App ready
+      setLoading(false);
     }
-    
-    // Mark loading as complete
-    setLoading(false);
   }, []);
 
+  // Login user
   const login = (data) => {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    setUser(data.user);
+    try {
+      if (!data?.token || !data?.user) {
+        throw new Error("Invalid login data");
+      }
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      setUser(data.user);
+    } catch (error) {
+      console.error("Login failed:", error);
+    }
   };
 
+  // Logout user
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
+    try {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setUser(null);
+    }
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser, // optional: useful for profile update
+        login,
+        logout,
+        loading,
+        isAuthenticated: !!user,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+// Safe custom hook
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+
+  return context;
+};

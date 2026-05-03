@@ -3,19 +3,32 @@ import { useAuth } from "../context/AuthContext";
 import Loader from "./Loader";
 
 const PrivateRoute = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAuthenticated } = useAuth();
   const location = useLocation();
 
-  // Show loader while checking authentication
+  // Prevent page flash while auth restores from localStorage
   if (loading) {
     return <Loader />;
   }
 
-  // Redirect to login if not authenticated
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+  // Extra security check:
+  // if token removed manually but stale user exists, block access
+  const token = localStorage.getItem("token");
+
+  // Redirect unauthenticated users
+  if (!isAuthenticated || !user || !token) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{
+          from: location.pathname,
+        }}
+      />
+    );
   }
 
+  // Authenticated
   return children;
 };
 
