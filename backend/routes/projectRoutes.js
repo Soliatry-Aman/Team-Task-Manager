@@ -5,6 +5,7 @@ const express = require("express");
 const router = express.Router();
 const Project = require("../models/Project");
 const User = require("../models/User");
+const Task = require("../models/Task");
 const { protect } = require("../middleware/authMiddleware");
 
 // ─── Create Project ──────────────────────────────────────
@@ -60,9 +61,7 @@ router.get("/", protect, async (req, res) => {
 // ─── Get Single Project ──────────────────────────────────
 router.get("/:id", protect, async (req, res) => {
   try {
-    const project = await Project.findById(
-      req.params.id
-    )
+    const project = await Project.findById(req.params.id)
       .populate("admin", "name email")
       .populate("members", "name email");
 
@@ -82,130 +81,148 @@ router.get("/:id", protect, async (req, res) => {
 });
 
 // ─── Add Member ──────────────────────────────────────────
-router.put(
-  "/:id/add-member",
-  protect,
-  async (req, res) => {
-    try {
-      const { userId } = req.body;
+router.put("/:id/add-member", protect, async (req, res) => {
+  try {
+    const { userId } = req.body;
 
-      const project = await Project.findById(
-        req.params.id
-      );
+    const project = await Project.findById(req.params.id);
 
-      if (!project) {
-        return res.status(404).json({
-          message: "Project not found",
-        });
-      }
-
-      // Admin only
-      if (
-        project.admin.toString() !== req.user.id
-      ) {
-        return res.status(403).json({
-          message:
-            "Only admin can add members",
-        });
-      }
-
-      // Prevent duplicate
-      if (
-        project.members.includes(userId)
-      ) {
-        return res.status(400).json({
-          message:
-            "User is already a member",
-        });
-      }
-
-      project.members.push(userId);
-      await project.save();
-
-      await User.findByIdAndUpdate(userId, {
-        $push: { projects: project._id },
-      });
-
-      res.status(200).json({
-        message: "Member added successfully",
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: "Server error",
-        error: error.message,
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
       });
     }
+
+    // Admin only
+    if (project.admin.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Only admin can add members",
+      });
+    }
+
+    // Prevent duplicate
+    if (project.members.includes(userId)) {
+      return res.status(400).json({
+        message: "User is already a member",
+      });
+    }
+
+    project.members.push(userId);
+    await project.save();
+
+    await User.findByIdAndUpdate(userId, {
+      $push: { projects: project._id },
+    });
+
+    res.status(200).json({
+      message: "Member added successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
-);
+});
 
 // ─── Remove Member ───────────────────────────────────────
-router.put(
-  "/:id/remove-member/:userId",
-  protect,
-  async (req, res) => {
-    try {
-      const project = await Project.findById(
-        req.params.id
-      );
+router.put("/:id/remove-member/:userId", protect, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
 
-      if (!project) {
-        return res.status(404).json({
-          message: "Project not found",
-        });
-      }
-
-      // Admin only
-      if (
-        project.admin.toString() !== req.user.id
-      ) {
-        return res.status(403).json({
-          message:
-            "Only admin can remove members",
-        });
-      }
-
-      // Prevent removing admin
-      if (
-        project.admin.toString() ===
-        req.params.userId
-      ) {
-        return res.status(400).json({
-          message:
-            "Admin cannot be removed",
-        });
-      }
-
-      // Remove from project
-      project.members =
-        project.members.filter(
-          (member) =>
-            member.toString() !==
-            req.params.userId
-        );
-
-      await project.save();
-
-      // Remove from user
-      await User.findByIdAndUpdate(
-        req.params.userId,
-        {
-          $pull: {
-            projects: project._id,
-          },
-        }
-      );
-
-      res.status(200).json({
-        message:
-          "Member removed successfully",
-      });
-    } catch (error) {
-      res.status(500).json({
-        message: "Server error",
-        error: error.message,
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
       });
     }
+
+    // Admin only
+    if (project.admin.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Only admin can remove members",
+      });
+    }
+
+    // Prevent removing admin
+    if (project.admin.toString() === req.params.userId) {
+      return res.status(400).json({
+        message: "Admin cannot be removed",
+      });
+    }
+
+    // Remove from project
+    project.members = project.members.filter(
+      (member) =>
+        member.toString() !== req.params.userId
+    );
+
+    await project.save();
+
+    // Remove from user
+    await User.findByIdAndUpdate(req.params.userId, {
+      $pull: {
+        projects: project._id,
+      },
+    });
+
+    res.status(200).json({
+      message: "Member removed successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
   }
-);
+});
+
+// ─── Delete Project ──────────────────────────────────────
+router.delete("/:id", protect, async (req, res) => {
+  try {
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({
+        message: "Project not found",
+      });
+    }
+
+    // Admin only
+    if (project.admin.toString() !== req.user.id) {
+      return res.status(403).json({
+        message: "Only admin can delete this project",
+      });
+    }
+
+    // Delete all related tasks
+    await Task.deleteMany({
+      project: req.params.id,
+    });
+
+    // Remove project from all users
+    await User.updateMany(
+      {
+        projects: req.params.id,
+      },
+      {
+        $pull: {
+          projects: req.params.id,
+        },
+      }
+    );
+
+    // Delete project
+    await Project.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      message: "Project deleted successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+});
 
 module.exports = router;
