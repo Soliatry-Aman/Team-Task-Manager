@@ -111,7 +111,7 @@ const Sidebar = ({ onClose }) => {
 
           <button
             className="sidebar-help"
-            onClick={() => window.open("https://github.com/", "_blank", "noopener,noreferrer")}
+            onClick={() => window.open("https://github.com/Soliatry-Aman/Team-Task-Manager/blob/main/README.md", "_blank", "noopener,noreferrer")}
             style={styles.helpCard}
           >
             <div style={styles.helpIcon}>
