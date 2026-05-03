@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const Navbar = () => {
+const Navbar = ({ onMenuToggle }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -24,21 +24,41 @@ const Navbar = () => {
           box-shadow: 0 4px 16px rgba(37,99,235,0.35) !important;
         }
         .nav-logout:active { transform: scale(0.97); }
+        .nav-menu-btn:hover {
+          background-color: rgba(15,23,42,0.08) !important;
+        }
+        @media (min-width: 768px) {
+          .nav-menu-btn { display: none !important; }
+        }
       `}</style>
 
       <nav style={styles.nav}>
-        {/* Left — Brand */}
-        <div
-          className="nav-logo"
-          onClick={() => navigate("/")}
-          style={styles.brand}
-        >
-          <div style={styles.logoBox} className="nav-logo-box">
-            <span style={styles.logoLetter}>T</span>
-          </div>
-          <div style={styles.brandText}>
-            <span style={styles.brandName}>TeamTask</span>
-            <span style={styles.brandSub}>Workspace</span>
+        {/* Left — Brand + Menu Button */}
+        <div style={styles.brandWrapper}>
+          <button
+            onClick={onMenuToggle}
+            style={styles.menuBtn}
+            className="nav-menu-btn"
+            aria-label="Toggle menu"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <line x1="3" y1="6" x2="21" y2="6" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="3" y1="12" x2="21" y2="12" strokeWidth="2" strokeLinecap="round"/>
+              <line x1="3" y1="18" x2="21" y2="18" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <div
+            className="nav-logo"
+            onClick={() => navigate("/")}
+            style={styles.brand}
+          >
+            <div style={styles.logoBox} className="nav-logo-box">
+              <span style={styles.logoLetter}>T</span>
+            </div>
+            <div style={styles.brandText}>
+              <span style={styles.brandName}>TeamTask</span>
+              <span style={styles.brandSub}>Workspace</span>
+            </div>
           </div>
         </div>
 
@@ -93,6 +113,28 @@ const styles = {
     fontFamily: "'DM Sans', system-ui, sans-serif",
   },
 
+  /* Menu Button */
+  menuBtn: {
+    display: "none",
+    background: "none",
+    border: "none",
+    cursor: "pointer",
+    padding: "8px",
+    color: "#0f172a",
+    transition: "background-color 200ms ease",
+    borderRadius: "8px",
+    marginRight: "8px",
+  },
+
+  /* Brand Wrapper */
+  brandWrapper: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flex: 1,
+    minWidth: 0,
+  },
+
   /* Brand */
   brand: {
     display: "flex",
@@ -100,6 +142,7 @@ const styles = {
     gap: "10px",
     cursor: "pointer",
     userSelect: "none",
+    minWidth: 0,
   },
   logoBox: {
     width: "34px",
@@ -123,12 +166,14 @@ const styles = {
     flexDirection: "column",
     lineHeight: 1,
     gap: "2px",
+    minWidth: 0,
   },
   brandName: {
     fontSize: "15px",
     fontWeight: 700,
     color: "#0f172a",
     letterSpacing: "-0.02em",
+    whiteSpace: "nowrap",
   },
   brandSub: {
     fontSize: "10px",
@@ -136,6 +181,7 @@ const styles = {
     color: "#2563eb",
     letterSpacing: "0.12em",
     textTransform: "uppercase",
+    whiteSpace: "nowrap",
   },
 
   /* Right side */
@@ -143,6 +189,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "16px",
+    flexShrink: 0,
   },
   userInfo: {
     display: "flex",
@@ -203,6 +250,7 @@ const styles = {
     transition: "background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease",
     fontFamily: "'DM Sans', system-ui, sans-serif",
     letterSpacing: "-0.01em",
+    whiteSpace: "nowrap",
   },
 };
 

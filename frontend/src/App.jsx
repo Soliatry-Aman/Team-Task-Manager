@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { useState } from "react";
 import PrivateRoute from "./components/PrivateRoute";
 
 // Pages
@@ -14,11 +15,26 @@ import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 
 const AppLayout = ({ children }) => {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   return (
     <div style={styles.root}>
-      <Navbar />
+      <Navbar onMenuToggle={() => setSidebarOpen(!sidebarOpen)} />
       <div style={styles.body}>
-        <Sidebar />
+        {/* Mobile overlay */}
+        {sidebarOpen && (
+          <div
+            style={styles.mobileOverlay}
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        {/* Sidebar */}
+        <div style={{
+          ...styles.sidebarWrapper,
+          ...(sidebarOpen ? styles.sidebarWrapperOpen : {})
+        }}>
+          <Sidebar onClose={() => setSidebarOpen(false)} />
+        </div>
         <main style={styles.main}>
           <div style={styles.mainInner}>
             {children}
@@ -75,16 +91,57 @@ const styles = {
   body: {
     display: "flex",
     minHeight: "calc(100vh - 64px)",
+    position: "relative",
+  },
+  sidebarWrapper: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    height: "100%",
+    zIndex: 40,
+    transform: "translateX(-100%)",
+    transition: "transform 0.3s ease",
+    "@media (min-width: 768px)": {
+      position: "static",
+      transform: "none",
+      zIndex: "auto",
+    },
+  },
+  sidebarWrapperOpen: {
+    transform: "translateX(0)",
+  },
+  mobileOverlay: {
+    position: "fixed",
+    top: 64,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    zIndex: 30,
+    display: "block",
+    "@media (min-width: 768px)": {
+      display: "none",
+    },
   },
   main: {
     flex: 1,
     overflowX: "hidden",
     backgroundColor: "#f6f5f2",
+    width: "100%",
+    "@media (max-width: 767px)": {
+      width: "100%",
+    },
   },
   mainInner: {
     padding: "32px 28px",
     maxWidth: "1200px",
     margin: "0 auto",
+    "@media (max-width: 768px)": {
+      padding: "20px 16px",
+    },
+    "@media (max-width: 480px)": {
+      padding: "16px 12px",
+    },
   },
 };
 

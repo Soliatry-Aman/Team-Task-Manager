@@ -35,7 +35,7 @@ const NAV_ITEMS = [
   },
 ];
 
-const Sidebar = () => {
+const Sidebar = ({ onClose }) => {
   return (
     <>
       <style>{`
@@ -69,6 +69,7 @@ const Sidebar = () => {
                 to={to}
                 end={to === "/"}
                 className="sidebar-link"
+                onClick={onClose}
               >
                 {({ isActive }) => (
                   <div

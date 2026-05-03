@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import Loader from "../components/Loader";
@@ -8,6 +8,7 @@ import TaskCard from "../components/TaskCard";
 
 const ProjectDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [project, setProject] = useState(null);
@@ -104,6 +105,21 @@ const ProjectDetail = () => {
     }
   };
 
+  const handleDeleteProject = async () => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${project.title}"? This action cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    try {
+      await axiosInstance.delete(`/projects/${id}`);
+      showAlert("success", "Project deleted successfully");
+      setTimeout(() => navigate("/projects"), 1500);
+    } catch (err) {
+      showAlert("error", err.response?.data?.message || "Failed to delete project");
+    }
+  };
+
   if (loading) return <Loader />;
   if (!project) return (
     <div style={styles.errorBox}><span>⚠</span> Project not found</div>
@@ -142,18 +158,41 @@ const ProjectDetail = () => {
           background-color: #2563eb !important;
           box-shadow: 0 4px 14px rgba(37,99,235,0.3) !important;
         }
+        .delete-project-btn:hover {
+          background-color: #fee2e2 !important;
+          border-color: #fca5a5 !important;
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.15) !important;
+        }
+        .delete-project-btn:active {
+          transform: scale(0.97);
+        }
       `}</style>
 
       <div className="pd-wrap" style={styles.wrapper}>
         {/* ── Project Header ── */}
-        <div style={styles.projectHeader}>
-          <div style={styles.projectAvatar}>
-            {project.title?.charAt(0).toUpperCase()}
+        <div style={styles.projectHeaderContainer}>
+          <div style={styles.projectHeader}>
+            <div style={styles.projectAvatar}>
+              {project.title?.charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <h1 style={styles.heading}>{project.title}</h1>
+              <p style={styles.subheading}>{project.description}</p>
+            </div>
           </div>
-          <div>
-            <h1 style={styles.heading}>{project.title}</h1>
-            <p style={styles.subheading}>{project.description}</p>
-          </div>
+          {isAdmin && (
+            <button
+              onClick={handleDeleteProject}
+              className="delete-project-btn"
+              style={styles.deleteProjectBtn}
+              title="Delete this project"
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M2 4h12M6.5 7v4M9.5 7v4M3 4l.5 9.5c0 .5.5 1 1 1h7c.5 0 1-.5 1-1L13 4M5 4V3c0-.5.5-1 1-1h4c.5 0 1 .5 1 1v1" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Delete Project
+            </button>
+          )}
         </div>
 
         {/* ── Alerts ── */}
@@ -390,10 +429,19 @@ const styles = {
     flexDirection: "column",
     gap: "24px",
   },
+  projectHeaderContainer: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: "16px",
+    flexWrap: "wrap",
+  },
   projectHeader: {
     display: "flex",
     alignItems: "center",
     gap: "16px",
+    flex: 1,
+    minWidth: 0,
   },
   projectAvatar: {
     width: "52px",
@@ -419,6 +467,22 @@ const styles = {
   subheading: {
     fontSize: "13px",
     color: "#64748b",
+  },
+  deleteProjectBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "10px 16px",
+    backgroundColor: "#fef2f2",
+    color: "#dc2626",
+    border: "1px solid #fecaca",
+    borderRadius: "10px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    transition: "all 200ms ease",
+    fontFamily: "'DM Sans', system-ui, sans-serif",
+    flexShrink: 0,
   },
   errorBox: {
     display: "flex",

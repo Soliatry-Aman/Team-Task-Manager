@@ -1,12 +1,18 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Loader from "./Loader";
 
 const PrivateRoute = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
 
+  // Show loader while checking authentication
+  if (loading) {
+    return <Loader />;
+  }
+
+  // Redirect to login if not authenticated
   if (!user) {
-    // Preserve the attempted URL so we can redirect back after login
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
