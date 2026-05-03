@@ -1,16 +1,16 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const PrivateRoute = ({
-  children,
-}) => {
+const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
+  const location = useLocation();
 
-  return user ? (
-    children
-  ) : (
-    <Navigate to="/login" />
-  );
+  if (!user) {
+    // Preserve the attempted URL so we can redirect back after login
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
 };
 
 export default PrivateRoute;

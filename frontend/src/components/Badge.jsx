@@ -1,44 +1,46 @@
-const STYLES = {
+const THEMES = {
   status: {
-    "To Do":       "bg-gray-100   text-gray-700   border-gray-300",
-    "In Progress": "bg-amber-100  text-amber-800  border-amber-300",
-    "Done":        "bg-green-100  text-green-800  border-green-300",
-    "Admin":       "bg-blue-100   text-blue-800   border-blue-300",
-    "Member":      "bg-purple-100 text-purple-800 border-purple-300",
+    "To Do":       { bg: "#f1f5f9", color: "#475569", dot: "#94a3b8", border: "rgba(71,85,105,0.15)" },
+    "In Progress": { bg: "#fffbeb", color: "#92400e", dot: "#f59e0b", border: "rgba(245,158,11,0.25)" },
+    "Done":        { bg: "#f0fdf4", color: "#166534", dot: "#22c55e", border: "rgba(34,197,94,0.25)"  },
+    "Admin":       { bg: "#eff6ff", color: "#1e40af", dot: "#2563eb", border: "rgba(37,99,235,0.2)"  },
+    "Member":      { bg: "#faf5ff", color: "#6b21a8", dot: "#a855f7", border: "rgba(168,85,247,0.2)" },
   },
   priority: {
-    "Low":    "bg-blue-100  text-blue-800  border-blue-300",
-    "Medium": "bg-amber-100 text-amber-800 border-amber-300",
-    "High":   "bg-red-100   text-red-800   border-red-300",
+    "Low":    { bg: "#f0fdf4", color: "#166534", dot: "#22c55e", border: "rgba(34,197,94,0.2)"   },
+    "Medium": { bg: "#fffbeb", color: "#92400e", dot: "#f59e0b", border: "rgba(245,158,11,0.25)" },
+    "High":   { bg: "#fef2f2", color: "#991b1b", dot: "#ef4444", border: "rgba(239,68,68,0.25)"  },
   },
 };
 
-const DOT_COLORS = {
-  status: {
-    "To Do":       "bg-gray-400",
-    "In Progress": "bg-amber-500",
-    "Done":        "bg-green-500",
-    "Admin":       "bg-blue-500",
-    "Member":      "bg-purple-500",
-  },
-  priority: {
-    "Low":    "bg-blue-500",
-    "Medium": "bg-amber-500",
-    "High":   "bg-red-500",
-  },
-};
+const DEFAULT = { bg: "#f1f5f9", color: "#475569", dot: "#94a3b8", border: "rgba(71,85,105,0.15)" };
 
 const Badge = ({ text, type }) => {
-  const badgeStyle =
-    STYLES[type]?.[text] ?? "bg-gray-100 text-gray-700 border-gray-300";
-  const dotColor =
-    DOT_COLORS[type]?.[text] ?? "bg-gray-400";
+  const theme = THEMES[type]?.[text] ?? DEFAULT;
 
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${badgeStyle}`}
-    >
-      <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+    <span style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "5px",
+      padding: "3px 10px",
+      borderRadius: "99px",
+      fontSize: "11px",
+      fontWeight: 600,
+      letterSpacing: "0.01em",
+      backgroundColor: theme.bg,
+      color: theme.color,
+      border: `1px solid ${theme.border}`,
+      fontFamily: "'DM Sans', system-ui, sans-serif",
+      whiteSpace: "nowrap",
+    }}>
+      <span style={{
+        width: "5px",
+        height: "5px",
+        borderRadius: "50%",
+        backgroundColor: theme.dot,
+        flexShrink: 0,
+      }} />
       {text}
     </span>
   );
