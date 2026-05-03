@@ -6,7 +6,9 @@ import StatCard from "../components/StatCard";
 
 const Dashboard = () => {
   const { user } = useAuth();
+
   const [loading, setLoading] = useState(true);
+
   const [stats, setStats] = useState({
     totalTasks: 0,
     todoTasks: 0,
@@ -14,33 +16,75 @@ const Dashboard = () => {
     doneTasks: 0,
     overdueTasks: 0,
   });
+
   const [error, setError] = useState("");
 
   useEffect(() => {
     const fetchDashboard = async () => {
       try {
         setLoading(true);
-        const projectsRes = await axiosInstance.get("/projects");
-        const projects = projectsRes.data || [];
+        setError("");
 
-        let allTasks = [];
-        for (const project of projects) {
-          const tasksRes = await axiosInstance.get(`/tasks/${project._id}`);
-          allTasks = [...allTasks, ...tasksRes.data];
-        }
+        // Get all projects safely
+        const projectsRes = await axiosInstance.get("/projects");
+        const projects = Array.isArray(projectsRes.data)
+          ? projectsRes.data
+          : [];
+
+        // Fetch all project tasks in parallel (FASTER + BETTER)
+        const taskResponses = await Promise.all(
+          projects.map((project) =>
+            axiosInstance
+              .get(`/tasks/${project._id}`)
+              .catch(() => ({ data: [] }))
+          )
+        );
+
+        // Flatten all tasks
+        const allTasks = taskResponses.flatMap((res) =>
+          Array.isArray(res.data) ? res.data : []
+        );
 
         const now = new Date();
+
+        // Calculate stats safely
+        const totalTasks = allTasks.length;
+
+        const todoTasks = allTasks.filter(
+          (task) => task?.status === "To Do"
+        ).length;
+
+        const inProgressTasks = allTasks.filter(
+          (task) => task?.status === "In Progress"
+        ).length;
+
+        const doneTasks = allTasks.filter(
+          (task) => task?.status === "Done"
+        ).length;
+
+        const overdueTasks = allTasks.filter((task) => {
+          if (!task?.dueDate || task?.status === "Done") return false;
+
+          const dueDate = new Date(task.dueDate);
+
+          return !isNaN(dueDate) && dueDate < now;
+        }).length;
+
         setStats({
-          totalTasks: allTasks.length,
-          todoTasks: allTasks.filter((t) => t.status === "To Do").length,
-          inProgressTasks: allTasks.filter((t) => t.status === "In Progress").length,
-          doneTasks: allTasks.filter((t) => t.status === "Done").length,
-          overdueTasks: allTasks.filter(
-            (t) => new Date(t.dueDate) < now && t.status !== "Done"
-          ).length,
+          totalTasks,
+          todoTasks,
+          inProgressTasks,
+          doneTasks,
+          overdueTasks,
         });
       } catch (err) {
-        setError(err.response?.data?.message || "Failed to load dashboard");
+        console.error("Dashboard Error:", err);
+
+        setError(
+          err.response?.data?.message ||
+            err.message ||
+            "Failed to load dashboard"
+        );
       } finally {
         setLoading(false);
       }
@@ -49,31 +93,59 @@ const Dashboard = () => {
     fetchDashboard();
   }, []);
 
+  // Greeting
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
+  const greeting =
+    hour < 12
+      ? "Good morning"
+      : hour < 17
+      ? "Good afternoon"
+      : "Good evening";
+
+  // Completion %
   const completionRate =
     stats.totalTasks > 0
       ? Math.round((stats.doneTasks / stats.totalTasks) * 100)
       : 0;
 
-  if (loading) return <Loader />;
+  // Loading state
+  if (loading) {
+    return <Loader />;
+  }
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
-        .dash-wrapper { animation: fadeUp 0.4s ease both; }
+
+        .dash-wrapper {
+          animation: fadeUp 0.4s ease both;
+        }
+
+        @media (max-width: 768px) {
+          .dash-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+        }
       `}</style>
 
       <div className="dash-wrapper" style={styles.wrapper}>
-        {/* ── Header ── */}
-        <div style={styles.header}>
+        {/* Header */}
+        <div className="dash-header" style={styles.header}>
           <div>
             <p style={styles.greeting}>
               {greeting},{" "}
@@ -81,28 +153,45 @@ const Dashboard = () => {
                 {user?.name?.split(" ")[0] || "there"} 👋
               </span>
             </p>
+
             <h1 style={styles.heading}>Dashboard</h1>
+
             <p style={styles.subheading}>
               Here's what's happening across your workspace today.
             </p>
           </div>
 
-          {/* Completion badge */}
+          {/* Completion Ring */}
           <div style={styles.completionBadge}>
-            <svg width="36" height="36" viewBox="0 0 36 36">
-              <circle cx="18" cy="18" r="15" fill="none" stroke="rgba(15,23,42,0.07)" strokeWidth="3"/>
+            <svg width="56" height="56" viewBox="0 0 36 36">
               <circle
-                cx="18" cy="18" r="15"
+                cx="18"
+                cy="18"
+                r="15"
+                fill="none"
+                stroke="rgba(15,23,42,0.07)"
+                strokeWidth="3"
+              />
+
+              <circle
+                cx="18"
+                cy="18"
+                r="15"
                 fill="none"
                 stroke="#2563eb"
                 strokeWidth="3"
                 strokeLinecap="round"
-                strokeDasharray={`${2 * Math.PI * 15}`}
-                strokeDashoffset={`${2 * Math.PI * 15 * (1 - completionRate / 100)}`}
+                strokeDasharray={2 * Math.PI * 15}
+                strokeDashoffset={
+                  2 * Math.PI * 15 * (1 - completionRate / 100)
+                }
                 transform="rotate(-90 18 18)"
-                style={{ transition: "stroke-dashoffset 0.6s ease" }}
+                style={{
+                  transition: "stroke-dashoffset 0.6s ease",
+                }}
               />
             </svg>
+
             <div style={styles.completionText}>
               <p style={styles.completionValue}>{completionRate}%</p>
               <p style={styles.completionLabel}>Done</p>
@@ -110,7 +199,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* ── Error ── */}
+        {/* Error */}
         {error && (
           <div style={styles.errorBox}>
             <span style={styles.errorIcon}>!</span>
@@ -118,33 +207,30 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* ── Section label ── */}
+        {/* Section Label */}
         <div style={styles.sectionRow}>
           <p style={styles.sectionLabel}>Overview</p>
           <div style={styles.sectionLine} />
         </div>
 
-        {/* ── Stat Cards ── */}
+        {/* Stats Grid */}
         <div style={styles.grid}>
-          <StatCard title="Total Tasks"   value={stats.totalTasks}      />
-          <StatCard title="To Do"         value={stats.todoTasks}        />
-          <StatCard title="In Progress"   value={stats.inProgressTasks}  />
-          <StatCard title="Done"          value={stats.doneTasks}        />
-          <StatCard title="Overdue"       value={stats.overdueTasks}     />
+          <StatCard title="Total Tasks" value={stats.totalTasks} />
+          <StatCard title="To Do" value={stats.todoTasks} />
+          <StatCard title="In Progress" value={stats.inProgressTasks} />
+          <StatCard title="Done" value={stats.doneTasks} />
+          <StatCard title="Overdue" value={stats.overdueTasks} />
         </div>
 
-        {/* ── Quick summary banner ── */}
+        {/* Warning */}
         {stats.overdueTasks > 0 && (
           <div style={styles.warningBanner}>
-            <span style={styles.warningIcon}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M8 1.5L14.5 13H1.5L8 1.5z" stroke="#92400e" strokeWidth="1.5" strokeLinejoin="round"/>
-                <path d="M8 6v3M8 11v.5" stroke="#92400e" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-            </span>
+            <span style={styles.warningIcon}>⚠️</span>
+
             <p style={styles.warningText}>
-              You have <strong>{stats.overdueTasks}</strong> overdue{" "}
-              {stats.overdueTasks === 1 ? "task" : "tasks"} that need attention.
+              You have <strong>{stats.overdueTasks}</strong>{" "}
+              overdue {stats.overdueTasks === 1 ? "task" : "tasks"} that
+              need attention.
             </p>
           </div>
         )}
@@ -163,7 +249,6 @@ const styles = {
     gap: "28px",
   },
 
-  /* Header */
   header: {
     display: "flex",
     alignItems: "flex-start",
@@ -171,16 +256,19 @@ const styles = {
     gap: "16px",
     flexWrap: "wrap",
   },
+
   greeting: {
     fontSize: "13px",
     color: "#94a3b8",
     fontWeight: 500,
     marginBottom: "6px",
   },
+
   greetingName: {
     color: "#475569",
     fontWeight: 600,
   },
+
   heading: {
     fontSize: "30px",
     fontWeight: 800,
@@ -189,13 +277,12 @@ const styles = {
     lineHeight: 1.1,
     marginBottom: "6px",
   },
+
   subheading: {
     fontSize: "14px",
     color: "#64748b",
-    fontWeight: 400,
   },
 
-  /* Completion ring */
   completionBadge: {
     position: "relative",
     display: "flex",
@@ -203,26 +290,26 @@ const styles = {
     justifyContent: "center",
     flexShrink: 0,
   },
+
   completionText: {
     position: "absolute",
     textAlign: "center",
   },
+
   completionValue: {
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 800,
     color: "#0f172a",
     lineHeight: 1,
-    letterSpacing: "-0.02em",
   },
+
   completionLabel: {
     fontSize: "8px",
     color: "#94a3b8",
-    fontWeight: 600,
+    fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
   },
 
-  /* Error */
   errorBox: {
     display: "flex",
     alignItems: "center",
@@ -235,6 +322,7 @@ const styles = {
     color: "#dc2626",
     fontWeight: 500,
   },
+
   errorIcon: {
     width: "18px",
     height: "18px",
@@ -246,37 +334,34 @@ const styles = {
     justifyContent: "center",
     fontSize: "11px",
     fontWeight: 700,
-    flexShrink: 0,
   },
 
-  /* Section label */
   sectionRow: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
   },
+
   sectionLabel: {
     fontSize: "11px",
     fontWeight: 700,
     color: "#94a3b8",
     textTransform: "uppercase",
     letterSpacing: "0.1em",
-    whiteSpace: "nowrap",
   },
+
   sectionLine: {
     flex: 1,
     height: "1px",
     backgroundColor: "rgba(15,23,42,0.07)",
   },
 
-  /* Grid */
   grid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
     gap: "16px",
   },
 
-  /* Warning banner */
   warningBanner: {
     display: "flex",
     alignItems: "center",
@@ -286,10 +371,12 @@ const styles = {
     borderRadius: "12px",
     padding: "14px 18px",
   },
+
   warningIcon: {
+    fontSize: "18px",
     flexShrink: 0,
-    display: "flex",
   },
+
   warningText: {
     fontSize: "13px",
     color: "#92400e",

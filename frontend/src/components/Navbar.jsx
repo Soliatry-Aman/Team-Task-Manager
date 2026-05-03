@@ -3,91 +3,196 @@ import { useAuth } from "../context/AuthContext";
 
 const Navbar = ({ onMenuToggle }) => {
   const navigate = useNavigate();
+
   const { user, logout } = useAuth();
 
+  // Logout handler
   const handleLogout = () => {
-    logout();
-    navigate("/login");
+    try {
+      logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
+  // User initials fallback
   const initials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
     : "U";
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
-        .nav-logo:hover .nav-logo-box { transform: rotate(6deg) scale(1.05); }
+
+        .nav-logo:hover .nav-logo-box {
+          transform: rotate(6deg) scale(1.05);
+        }
+
         .nav-logout:hover {
           background-color: #2563eb !important;
           box-shadow: 0 4px 16px rgba(37,99,235,0.35) !important;
         }
-        .nav-logout:active { transform: scale(0.97); }
+
+        .nav-logout:active {
+          transform: scale(0.97);
+        }
+
         .nav-menu-btn:hover {
           background-color: rgba(15,23,42,0.08) !important;
         }
+
         @media (min-width: 768px) {
-          .nav-menu-btn { display: none !important; }
+          .nav-menu-btn {
+            display: none !important;
+          }
+        }
+
+        @media (max-width: 767px) {
+          .nav-user-meta {
+            display: none !important;
+          }
+
+          .nav-divider {
+            display: none !important;
+          }
+
+          .nav-logout-text {
+            display: none !important;
+          }
+
+          .nav-logout {
+            padding: 8px !important;
+          }
+
+          .nav {
+            padding: 0 14px !important;
+          }
+
+          .nav-brand-name {
+            font-size: 14px !important;
+          }
+
+          .nav-brand-sub {
+            font-size: 9px !important;
+          }
         }
       `}</style>
 
-      <nav style={styles.nav}>
-        {/* Left — Brand + Menu Button */}
+      <nav style={styles.nav} className="nav">
+        {/* Left Side */}
         <div style={styles.brandWrapper}>
+          {/* Mobile Menu */}
           <button
             onClick={onMenuToggle}
             style={styles.menuBtn}
             className="nav-menu-btn"
             aria-label="Toggle menu"
+            type="button"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-              <line x1="3" y1="6" x2="21" y2="6" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="3" y1="12" x2="21" y2="12" strokeWidth="2" strokeLinecap="round"/>
-              <line x1="3" y1="18" x2="21" y2="18" strokeWidth="2" strokeLinecap="round"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <line
+                x1="3"
+                y1="6"
+                x2="21"
+                y2="6"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <line
+                x1="3"
+                y1="12"
+                x2="21"
+                y2="12"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+              <line
+                x1="3"
+                y1="18"
+                x2="21"
+                y2="18"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
+
+          {/* Brand */}
           <div
             className="nav-logo"
             onClick={() => navigate("/")}
             style={styles.brand}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") navigate("/");
+            }}
           >
             <div style={styles.logoBox} className="nav-logo-box">
               <span style={styles.logoLetter}>T</span>
             </div>
+
             <div style={styles.brandText}>
-              <span style={styles.brandName}>TeamTask</span>
-              <span style={styles.brandSub}>Workspace</span>
+              <span style={styles.brandName} className="nav-brand-name">
+                TeamTask
+              </span>
+
+              <span style={styles.brandSub} className="nav-brand-sub">
+                Workspace
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Right — User + Logout */}
+        {/* Right Side */}
         <div style={styles.right}>
-          {/* User info */}
+          {/* User Info */}
           <div style={styles.userInfo}>
-            <div style={styles.userMeta}>
+            <div style={styles.userMeta} className="nav-user-meta">
               <p style={styles.userName}>{user?.name || "Guest"}</p>
-              <p style={styles.userRole}>{user?.role || "Member"}</p>
+
+              <p style={styles.userRole}>
+                {user?.role || "Member"}
+              </p>
             </div>
-            <div style={styles.avatar}>
-              {initials}
-            </div>
+
+            <div style={styles.avatar}>{initials}</div>
           </div>
 
           {/* Divider */}
-          <div style={styles.divider} />
+          <div style={styles.divider} className="nav-divider" />
 
           {/* Logout */}
           <button
             onClick={handleLogout}
             style={styles.logoutBtn}
             className="nav-logout"
+            type="button"
           >
             <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <path d="M6 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3M10 10l3-3-3-3M13 7H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path
+                d="M6 2H3a1 1 0 00-1 1v9a1 1 0 001 1h3M10 10l3-3-3-3M13 7H6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
-            Logout
+
+            <span className="nav-logout-text">Logout</span>
           </button>
         </div>
       </nav>
@@ -106,14 +211,14 @@ const styles = {
     alignItems: "center",
     justifyContent: "space-between",
     padding: "0 24px",
-    backgroundColor: "rgba(255,255,255,0.85)",
+    backgroundColor: "rgba(255,255,255,0.88)",
     backdropFilter: "blur(16px)",
     WebkitBackdropFilter: "blur(16px)",
     borderBottom: "1px solid rgba(15,23,42,0.07)",
     fontFamily: "'DM Sans', system-ui, sans-serif",
+    boxSizing: "border-box",
   },
 
-  /* Menu Button */
   menuBtn: {
     display: "none",
     background: "none",
@@ -126,7 +231,6 @@ const styles = {
     marginRight: "8px",
   },
 
-  /* Brand Wrapper */
   brandWrapper: {
     display: "flex",
     alignItems: "center",
@@ -135,7 +239,6 @@ const styles = {
     minWidth: 0,
   },
 
-  /* Brand */
   brand: {
     display: "flex",
     alignItems: "center",
@@ -143,7 +246,9 @@ const styles = {
     cursor: "pointer",
     userSelect: "none",
     minWidth: 0,
+    outline: "none",
   },
+
   logoBox: {
     width: "34px",
     height: "34px",
@@ -155,12 +260,14 @@ const styles = {
     transition: "transform 200ms ease",
     flexShrink: 0,
   },
+
   logoLetter: {
     color: "#fff",
     fontSize: "16px",
     fontWeight: 800,
     letterSpacing: "-0.04em",
   },
+
   brandText: {
     display: "flex",
     flexDirection: "column",
@@ -168,6 +275,7 @@ const styles = {
     gap: "2px",
     minWidth: 0,
   },
+
   brandName: {
     fontSize: "15px",
     fontWeight: 700,
@@ -175,6 +283,7 @@ const styles = {
     letterSpacing: "-0.02em",
     whiteSpace: "nowrap",
   },
+
   brandSub: {
     fontSize: "10px",
     fontWeight: 600,
@@ -184,30 +293,32 @@ const styles = {
     whiteSpace: "nowrap",
   },
 
-  /* Right side */
   right: {
     display: "flex",
     alignItems: "center",
     gap: "16px",
     flexShrink: 0,
   },
+
   userInfo: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
   },
+
   userMeta: {
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-end",
     gap: "1px",
   },
+
   userName: {
     fontSize: "13px",
     fontWeight: 600,
     color: "#0f172a",
-    letterSpacing: "-0.01em",
   },
+
   userRole: {
     fontSize: "10px",
     fontWeight: 600,
@@ -215,6 +326,7 @@ const styles = {
     textTransform: "uppercase",
     letterSpacing: "0.08em",
   },
+
   avatar: {
     width: "34px",
     height: "34px",
@@ -230,11 +342,13 @@ const styles = {
     boxShadow: "0 0 0 1px rgba(15,23,42,0.08)",
     flexShrink: 0,
   },
+
   divider: {
     width: "1px",
     height: "20px",
     backgroundColor: "rgba(15,23,42,0.1)",
   },
+
   logoutBtn: {
     display: "flex",
     alignItems: "center",
@@ -247,9 +361,9 @@ const styles = {
     fontSize: "13px",
     fontWeight: 600,
     cursor: "pointer",
-    transition: "background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease",
+    transition:
+      "background-color 150ms ease, box-shadow 150ms ease, transform 100ms ease",
     fontFamily: "'DM Sans', system-ui, sans-serif",
-    letterSpacing: "-0.01em",
     whiteSpace: "nowrap",
   },
 };

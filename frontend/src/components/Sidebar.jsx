@@ -6,10 +6,10 @@ const NAV_ITEMS = [
     label: "Dashboard",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
-        <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4"/>
+        <rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+        <rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+        <rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
+        <rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.4" />
       </svg>
     ),
   },
@@ -18,7 +18,11 @@ const NAV_ITEMS = [
     label: "Projects",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M2 4.5A1.5 1.5 0 013.5 3h3.086a1.5 1.5 0 011.06.44l.915.914A1.5 1.5 0 009.62 5H12.5A1.5 1.5 0 0114 6.5v6A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5v-8z" stroke="currentColor" strokeWidth="1.4"/>
+        <path
+          d="M2 4.5A1.5 1.5 0 013.5 3h3.086a1.5 1.5 0 011.06.44l.915.914A1.5 1.5 0 009.62 5H12.5A1.5 1.5 0 0114 6.5v6A1.5 1.5 0 0112.5 14h-9A1.5 1.5 0 012 12.5v-8z"
+          stroke="currentColor"
+          strokeWidth="1.4"
+        />
       </svg>
     ),
   },
@@ -27,41 +31,57 @@ const NAV_ITEMS = [
     label: "Tasks",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M2 4h12M2 8h8M2 12h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-        <circle cx="13" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.4"/>
-        <path d="M12 11l.8.8 1.2-1.3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path
+          d="M2 4h12M2 8h8M2 12h5"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        <circle cx="13" cy="11" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+        <path
+          d="M12 11l.8.8 1.2-1.3"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
   },
 ];
 
+// Sidebar is now "dumb" — it's always visible when rendered.
+// App.jsx controls WHEN to render it (desktop: always, mobile: only when open).
 const Sidebar = ({ onClose }) => {
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
         .sidebar-link { text-decoration: none; }
+
         .sidebar-link:hover .sidebar-link-inner:not(.active-inner) {
           background-color: rgba(15,23,42,0.05) !important;
           color: #0f172a !important;
         }
+
         .sidebar-help:hover {
           background-color: #0f172a !important;
           color: #fff !important;
         }
-        .sidebar-help:hover .help-sub { color: rgba(255,255,255,0.6) !important; }
+
+        .sidebar-help:hover .help-sub {
+          color: rgba(255,255,255,0.65) !important;
+        }
       `}</style>
 
       <aside style={styles.aside}>
         <div style={styles.inner}>
-
-          {/* Section Label */}
           <div style={styles.sectionLabel}>
             <span style={styles.pulse} />
             <span style={styles.sectionText}>Navigation</span>
           </div>
 
-          {/* Nav Links */}
           <nav style={styles.nav}>
             {NAV_ITEMS.map(({ to, label, icon }) => (
               <NavLink
@@ -74,15 +94,9 @@ const Sidebar = ({ onClose }) => {
                 {({ isActive }) => (
                   <div
                     className={isActive ? "sidebar-link-inner active-inner" : "sidebar-link-inner"}
-                    style={{
-                      ...styles.linkInner,
-                      ...(isActive ? styles.linkActive : {}),
-                    }}
+                    style={{ ...styles.linkInner, ...(isActive ? styles.linkActive : {}) }}
                   >
-                    <span style={{
-                      ...styles.iconWrap,
-                      ...(isActive ? styles.iconWrapActive : {}),
-                    }}>
+                    <span style={{ ...styles.iconWrap, ...(isActive ? styles.iconWrapActive : {}) }}>
                       {icon}
                     </span>
                     <span style={styles.linkLabel}>{label}</span>
@@ -93,30 +107,25 @@ const Sidebar = ({ onClose }) => {
             ))}
           </nav>
 
-          {/* Divider */}
           <div style={styles.divider} />
 
-          {/* Help Card */}
           <button
             className="sidebar-help"
-            onClick={() => window.open("https://github.com/", "_blank")}
+            onClick={() => window.open("https://github.com/", "_blank", "noopener,noreferrer")}
             style={styles.helpCard}
           >
             <div style={styles.helpIcon}>
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4"/>
-                <path d="M6.5 6C6.5 5.17 7.17 4.5 8 4.5s1.5.67 1.5 1.5c0 1-1.5 1.5-1.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                <circle cx="8" cy="11.5" r=".75" fill="currentColor"/>
+                <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.4" />
+                <path d="M6.5 6C6.5 5.17 7.17 4.5 8 4.5s1.5.67 1.5 1.5c0 1-1.5 1.5-1.5 2.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="8" cy="11.5" r=".75" fill="currentColor" />
               </svg>
             </div>
             <div>
               <p style={styles.helpTitle}>Need Help?</p>
-              <p style={styles.helpSub} className="help-sub">
-                View docs & support
-              </p>
+              <p style={styles.helpSub} className="help-sub">View docs & support</p>
             </div>
           </button>
-
         </div>
       </aside>
     </>
@@ -125,15 +134,12 @@ const Sidebar = ({ onClose }) => {
 
 const styles = {
   aside: {
-    display: "none",
     width: "240px",
-    minHeight: "calc(100vh - 64px)",
+    height: "100%",
     borderRight: "1px solid rgba(15,23,42,0.07)",
     backgroundColor: "#ffffff",
     flexShrink: 0,
     fontFamily: "'DM Sans', system-ui, sans-serif",
-    // Show on md+
-    "@media (min-width: 768px)": { display: "block" },
   },
   inner: {
     padding: "28px 16px",
@@ -141,7 +147,6 @@ const styles = {
     flexDirection: "column",
     gap: "4px",
   },
-
   sectionLabel: {
     display: "flex",
     alignItems: "center",
@@ -163,7 +168,6 @@ const styles = {
     letterSpacing: "0.12em",
     textTransform: "uppercase",
   },
-
   nav: {
     display: "flex",
     flexDirection: "column",
@@ -193,7 +197,6 @@ const styles = {
     justifyContent: "center",
     backgroundColor: "rgba(15,23,42,0.05)",
     flexShrink: 0,
-    transition: "background-color 150ms ease",
   },
   iconWrapActive: {
     backgroundColor: "rgba(255,255,255,0.12)",
@@ -211,13 +214,11 @@ const styles = {
     backgroundColor: "#2563eb",
     flexShrink: 0,
   },
-
   divider: {
     height: "1px",
     backgroundColor: "rgba(15,23,42,0.06)",
     margin: "16px 0",
   },
-
   helpCard: {
     display: "flex",
     alignItems: "center",
@@ -247,21 +248,15 @@ const styles = {
     fontSize: "12px",
     fontWeight: 700,
     color: "inherit",
-    letterSpacing: "-0.01em",
+    margin: 0,
   },
   helpSub: {
     fontSize: "11px",
     color: "#94a3b8",
     marginTop: "1px",
     transition: "color 200ms ease",
+    margin: 0,
   },
 };
-
-// Inject display:block for md+ since inline styles can't do media queries
-if (typeof document !== "undefined") {
-  const style = document.createElement("style");
-  style.textContent = `@media (min-width: 768px) { aside { display: block !important; } }`;
-  document.head.appendChild(style);
-}
 
 export default Sidebar;

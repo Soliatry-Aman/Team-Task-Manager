@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 import Loader from "../components/Loader";
@@ -8,6 +8,7 @@ import TaskCard from "../components/TaskCard";
 
 const ProjectDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const [project, setProject] = useState(null);
@@ -22,6 +23,8 @@ const ProjectDetail = () => {
   });
 
   const [loading, setLoading] = useState(true);
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [activeTab, setActiveTab] = useState("tasks");
@@ -67,30 +70,33 @@ const ProjectDetail = () => {
     }, 3500);
   };
 
+  // ── Delete Project ──────────────────────────────────────────────
+  const handleDeleteProject = async () => {
+    try {
+      setDeleting(true);
+      await axiosInstance.delete(`/projects/${id}`);
+      navigate("/projects", { replace: true });
+    } catch (err) {
+      setDeleting(false);
+      setDeleteConfirm(false);
+      showAlert("error", err.response?.data?.message || "Failed to delete project");
+    }
+  };
+
+  // ── Members ─────────────────────────────────────────────────────
   const handleAddMember = async (e) => {
     e.preventDefault();
 
-    if (!memberEmail) {
-      return showAlert("error", "Please enter member email");
-    }
+    if (!memberEmail) return showAlert("error", "Please enter member email");
 
     try {
-      const userRes = await axiosInstance.get(
-        `/users/search?email=${memberEmail}`
-      );
-
-      await axiosInstance.put(`/projects/${id}/add-member`, {
-        userId: userRes.data._id,
-      });
-
+      const userRes = await axiosInstance.get(`/users/search?email=${memberEmail}`);
+      await axiosInstance.put(`/projects/${id}/add-member`, { userId: userRes.data._id });
       showAlert("success", "Member added successfully");
       setMemberEmail("");
       fetchProjectData();
     } catch (err) {
-      showAlert(
-        "error",
-        err.response?.data?.message || "Failed to add member"
-      );
+      showAlert("error", err.response?.data?.message || "Failed to add member");
     }
   };
 
@@ -99,45 +105,25 @@ const ProjectDetail = () => {
       await axiosInstance.put(`/projects/${id}/remove-member/${memberId}`);
       fetchProjectData();
     } catch (err) {
-      showAlert(
-        "error",
-        err.response?.data?.message || "Failed to remove member"
-      );
+      showAlert("error", err.response?.data?.message || "Failed to remove member");
     }
   };
 
+  // ── Tasks ────────────────────────────────────────────────────────
   const handleTaskChange = (e) => {
-    setTaskData({
-      ...taskData,
-      [e.target.name]: e.target.value,
-    });
+    setTaskData({ ...taskData, [e.target.name]: e.target.value });
   };
 
   const handleCreateTask = async (e) => {
     e.preventDefault();
 
     try {
-      await axiosInstance.post("/tasks", {
-        ...taskData,
-        projectId: id,
-      });
-
+      await axiosInstance.post("/tasks", { ...taskData, projectId: id });
       showAlert("success", "Task created successfully");
-
-      setTaskData({
-        title: "",
-        description: "",
-        dueDate: "",
-        priority: "Medium",
-        assignedTo: "",
-      });
-
+      setTaskData({ title: "", description: "", dueDate: "", priority: "Medium", assignedTo: "" });
       fetchProjectData();
     } catch (err) {
-      showAlert(
-        "error",
-        err.response?.data?.message || "Failed to create task"
-      );
+      showAlert("error", err.response?.data?.message || "Failed to create task");
     }
   };
 
@@ -146,10 +132,7 @@ const ProjectDetail = () => {
       await axiosInstance.put(`/tasks/${taskId}`, { status });
       fetchProjectData();
     } catch (err) {
-      showAlert(
-        "error",
-        err.response?.data?.message || "Failed to update task"
-      );
+      showAlert("error", err.response?.data?.message || "Failed to update task");
     }
   };
 
@@ -158,10 +141,7 @@ const ProjectDetail = () => {
       await axiosInstance.delete(`/tasks/${taskId}`);
       fetchProjectData();
     } catch (err) {
-      showAlert(
-        "error",
-        err.response?.data?.message || "Failed to delete task"
-      );
+      showAlert("error", err.response?.data?.message || "Failed to delete task");
     }
   };
 
@@ -177,44 +157,71 @@ const ProjectDetail = () => {
 
   const TABS = [
     { key: "tasks", label: "Tasks", count: tasks.length },
-    {
-      key: "members",
-      label: "Members",
-      count: project.members?.length || 0,
-    },
-    ...(isAdmin
-      ? [{ key: "create", label: "Create Task", count: null }]
-      : []),
+    { key: "members", label: "Members", count: project.members?.length || 0 },
+    ...(isAdmin ? [{ key: "create", label: "Create Task", count: null }] : []),
   ];
 
   return (
     <div style={styles.wrapper}>
-      {/* Header */}
+      {/* ── Header ── */}
       <div style={styles.projectHeader}>
         <div style={styles.projectAvatar}>
           {project.title?.charAt(0).toUpperCase()}
         </div>
 
-        <div>
+        <div style={{ flex: 1, minWidth: 0 }}>
           <h1 style={styles.heading}>{project.title}</h1>
           <p style={styles.subheading}>{project.description}</p>
         </div>
+
+        {/* Delete button — admin only */}
+        {isAdmin && (
+          <div>
+            {!deleteConfirm ? (
+              <button
+                onClick={() => setDeleteConfirm(true)}
+                style={styles.deleteBtn}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M2 3.5h10M5.5 3.5V2.5a1 1 0 011-1h1a1 1 0 011 1v1M3.5 3.5l.7 7.5a1 1 0 001 .9h3.6a1 1 0 001-.9l.7-7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Delete Project
+              </button>
+            ) : (
+              <div style={styles.confirmRow}>
+                <span style={styles.confirmText}>Are you sure?</span>
+                <button
+                  onClick={handleDeleteProject}
+                  disabled={deleting}
+                  style={styles.confirmYes}
+                >
+                  {deleting ? "Deleting…" : "Yes, delete"}
+                </button>
+                <button
+                  onClick={() => setDeleteConfirm(false)}
+                  style={styles.confirmNo}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Alerts */}
+      {/* ── Alerts ── */}
       {error && (
         <div style={styles.errorBox}>
           <span>⚠</span> {error}
         </div>
       )}
-
       {success && (
         <div style={styles.successBox}>
           <span>✓</span> {success}
         </div>
       )}
 
-      {/* Tabs */}
+      {/* ── Tabs ── */}
       <div style={styles.tabBar}>
         {TABS.map((tab) => (
           <button
@@ -233,11 +240,11 @@ const ProjectDetail = () => {
         ))}
       </div>
 
-      {/* Tasks Tab */}
+      {/* ── Tasks Tab ── */}
       {activeTab === "tasks" && (
         <div style={styles.section}>
           {tasks.length === 0 ? (
-            <p>No tasks available.</p>
+            <p style={styles.emptyText}>No tasks yet. {isAdmin && "Create one in the \"Create Task\" tab."}</p>
           ) : (
             tasks.map((task) => (
               <TaskCard
@@ -252,7 +259,7 @@ const ProjectDetail = () => {
         </div>
       )}
 
-      {/* Members Tab */}
+      {/* ── Members Tab ── */}
       {activeTab === "members" && (
         <div style={styles.section}>
           {isAdmin && (
@@ -264,7 +271,6 @@ const ProjectDetail = () => {
                 onChange={(e) => setMemberEmail(e.target.value)}
                 style={styles.input}
               />
-
               <button type="submit" style={styles.addBtn}>
                 Add Member
               </button>
@@ -277,16 +283,12 @@ const ProjectDetail = () => {
             return (
               <div key={member._id} style={styles.memberRow}>
                 <div>
-                  <p>{member.name}</p>
-                  <p>{member.email}</p>
+                  <p style={{ margin: 0, fontWeight: 600, fontSize: "14px" }}>{member.name}</p>
+                  <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{member.email}</p>
                 </div>
 
                 <div style={styles.memberRight}>
-                  <Badge
-                    text={isAdminMember ? "Admin" : "Member"}
-                    type="status"
-                  />
-
+                  <Badge text={isAdminMember ? "Admin" : "Member"} type="status" />
                   {isAdmin && !isAdminMember && (
                     <button
                       onClick={() => handleRemoveMember(member._id)}
@@ -302,7 +304,7 @@ const ProjectDetail = () => {
         </div>
       )}
 
-      {/* Create Task Tab */}
+      {/* ── Create Task Tab ── */}
       {activeTab === "create" && isAdmin && (
         <div style={styles.section}>
           <form onSubmit={handleCreateTask} style={styles.form}>
@@ -313,6 +315,7 @@ const ProjectDetail = () => {
               value={taskData.title}
               onChange={handleTaskChange}
               style={styles.input}
+              required
             />
 
             <textarea
@@ -320,7 +323,7 @@ const ProjectDetail = () => {
               placeholder="Task Description"
               value={taskData.description}
               onChange={handleTaskChange}
-              style={styles.input}
+              style={{ ...styles.input, minHeight: "80px", resize: "vertical" }}
             />
 
             <input
@@ -349,7 +352,6 @@ const ProjectDetail = () => {
               style={styles.input}
             >
               <option value="">Select Member</option>
-
               {(project.members || []).map((member) => (
                 <option key={member._id} value={member._id}>
                   {member.name}
@@ -374,12 +376,14 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "20px",
+    fontFamily: "'DM Sans', system-ui, sans-serif",
   },
 
   projectHeader: {
     display: "flex",
     alignItems: "center",
     gap: "16px",
+    flexWrap: "wrap",
   },
 
   projectAvatar: {
@@ -392,50 +396,131 @@ const styles = {
     justifyContent: "center",
     fontWeight: "bold",
     fontSize: "20px",
+    color: "#2563eb",
+    flexShrink: 0,
   },
 
   heading: {
     fontSize: "24px",
-    fontWeight: "bold",
+    fontWeight: 800,
+    color: "#0f172a",
+    letterSpacing: "-0.02em",
+    margin: 0,
   },
 
   subheading: {
     color: "#64748b",
+    fontSize: "14px",
+    margin: "4px 0 0",
+  },
+
+  // ── Delete project controls ──
+  deleteBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "8px 14px",
+    backgroundColor: "#fef2f2",
+    color: "#dc2626",
+    border: "1px solid #fecaca",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    transition: "background-color 150ms ease",
+    whiteSpace: "nowrap",
+  },
+
+  confirmRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+
+  confirmText: {
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#dc2626",
+  },
+
+  confirmYes: {
+    padding: "7px 14px",
+    backgroundColor: "#dc2626",
+    color: "#fff",
+    border: "none",
+    borderRadius: "7px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+  },
+
+  confirmNo: {
+    padding: "7px 14px",
+    backgroundColor: "#f1f5f9",
+    color: "#475569",
+    border: "none",
+    borderRadius: "7px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 
   errorBox: {
-    padding: "12px",
+    padding: "12px 16px",
     background: "#fee2e2",
     color: "#b91c1c",
     borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: 500,
   },
 
   successBox: {
-    padding: "12px",
+    padding: "12px 16px",
     background: "#dcfce7",
     color: "#166534",
     borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: 500,
   },
 
   tabBar: {
     display: "flex",
-    gap: "10px",
+    gap: "6px",
+    borderBottom: "1px solid rgba(15,23,42,0.07)",
+    paddingBottom: "0",
   },
 
   tab: {
     padding: "10px 16px",
     cursor: "pointer",
     border: "none",
-    background: "#f1f5f9",
+    background: "transparent",
+    borderRadius: "8px 8px 0 0",
+    fontSize: "13px",
+    fontWeight: 600,
+    color: "#64748b",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontFamily: "inherit",
+    transition: "background-color 150ms ease, color 150ms ease",
   },
 
   tabActive: {
-    background: "#2563eb",
+    background: "#0f172a",
     color: "#fff",
   },
 
   tabCount: {
-    marginLeft: "6px",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    padding: "1px 6px",
+    borderRadius: "99px",
+    fontSize: "11px",
+    fontWeight: 700,
   },
 
   section: {
@@ -444,31 +529,51 @@ const styles = {
     gap: "12px",
   },
 
+  emptyText: {
+    fontSize: "14px",
+    color: "#94a3b8",
+    padding: "24px 0",
+  },
+
   addMemberForm: {
     display: "flex",
     gap: "10px",
+    flexWrap: "wrap",
   },
 
   input: {
-    padding: "10px",
+    padding: "10px 12px",
     border: "1px solid #cbd5e1",
     borderRadius: "8px",
+    fontSize: "13px",
+    fontFamily: "inherit",
+    outline: "none",
+    width: "100%",
+    boxSizing: "border-box",
+    backgroundColor: "#fff",
   },
 
   addBtn: {
-    padding: "10px 16px",
+    padding: "10px 18px",
     background: "#2563eb",
     color: "#fff",
     border: "none",
     borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
+    whiteSpace: "nowrap",
   },
 
   memberRow: {
     display: "flex",
     justifyContent: "space-between",
-    padding: "12px",
+    alignItems: "center",
+    padding: "14px 16px",
     border: "1px solid #e2e8f0",
-    borderRadius: "8px",
+    borderRadius: "10px",
+    backgroundColor: "#fff",
   },
 
   memberRight: {
@@ -478,18 +583,22 @@ const styles = {
   },
 
   removeBtn: {
-    padding: "6px 10px",
+    padding: "6px 12px",
     border: "none",
     background: "#fee2e2",
     color: "#b91c1c",
     borderRadius: "6px",
+    fontSize: "12px",
+    fontWeight: 600,
     cursor: "pointer",
+    fontFamily: "inherit",
   },
 
   form: {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
+    maxWidth: "480px",
   },
 
   submitBtn: {
@@ -498,6 +607,10 @@ const styles = {
     color: "#fff",
     border: "none",
     borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontFamily: "inherit",
   },
 };
 
