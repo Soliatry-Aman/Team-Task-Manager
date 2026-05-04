@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
 import Loader from "../components/Loader";
@@ -8,8 +8,14 @@ const VerifyEmail = () => {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  // Prevent double-call from React StrictMode's double-mount in development
+  const hasCalled = useRef(false);
 
   useEffect(() => {
+    // Guard: only call the API once even if effect fires twice (StrictMode)
+    if (hasCalled.current) return;
+    hasCalled.current = true;
+
     const verifyEmail = async () => {
       try {
         const response = await axiosInstance.get(

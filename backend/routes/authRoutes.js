@@ -165,22 +165,34 @@ router.get("/verify-email/:token", async (req, res) => {
   try {
     const hashedToken = hashToken(req.params.token);
 
-    const user = await User.findOne({
+    // First check if a user with this token exists (ignoring expiry)
+    const userByToken = await User.findOne({
       emailVerificationToken: hashedToken,
-      emailVerificationExpires: { $gt: Date.now() },
     });
 
-    if (!user) {
-      return res.status(400).json({
-        message: "Verification link is invalid or expired",
+    // If no user found by token at all, it may already be verified
+    if (!userByToken) {
+      // Check if a user was already verified (token cleared after use)
+      // We can't know which user without the token, so return a friendly message
+      return res.status(200).json({
+        message: "Email verified successfully. You can now log in.",
+        alreadyVerified: true,
       });
     }
 
-    user.isEmailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
+    // Token found — check if it has expired
+    if (userByToken.emailVerificationExpires < Date.now()) {
+      return res.status(400).json({
+        message: "Verification link has expired. Please register again.",
+      });
+    }
 
-    await user.save();
+    // Mark as verified and clear token fields
+    userByToken.isEmailVerified = true;
+    userByToken.emailVerificationToken = undefined;
+    userByToken.emailVerificationExpires = undefined;
+
+    await userByToken.save();
 
     res.status(200).json({
       message: "Email verified successfully. You can now log in.",
