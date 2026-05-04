@@ -165,7 +165,7 @@ const Navbar = ({ onMenuToggle }) => {
               <p style={styles.userName}>{user?.name || "Guest"}</p>
 
               <p style={styles.userRole}>
-                {user?.role || "Member"}
+                {user?.role || "Admin"}
               </p>
             </div>
 
