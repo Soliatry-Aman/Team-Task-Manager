@@ -119,16 +119,27 @@ router.post("/register", async (req, res) => {
     const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
     const verificationUrl = `${frontendUrl}/verify-email/${verificationToken}`;
 
-    const emailResult = await sendEmail({
-      to: user.email,
-      subject: "Verify your TeamTask account",
-      html: buildVerificationEmail(user.name, verificationUrl),
-    });
+    // Send email in isolated try-catch so email failure never blocks registration
+    let emailSent = false;
+    let devVerificationUrl = null;
+    try {
+      const emailResult = await sendEmail({
+        to: user.email,
+        subject: "Verify your TeamTask account",
+        html: buildVerificationEmail(user.name, verificationUrl),
+      });
+      emailSent = !emailResult.skipped;
+      if (emailResult.skipped) devVerificationUrl = verificationUrl;
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError.message);
+      // Still return success — user can resend from the inbox screen
+      devVerificationUrl = verificationUrl;
+    }
 
     res.status(201).json({
       message: "Account created! We've sent a verification link to your email.",
-      emailSent: !emailResult.skipped,
-      ...(emailResult.skipped ? { devVerificationUrl: verificationUrl } : {}),
+      emailSent,
+      ...(devVerificationUrl ? { devVerificationUrl } : {}),
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
