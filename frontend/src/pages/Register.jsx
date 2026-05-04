@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import axiosInstance from "../api/axiosInstance";
-import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [devVerificationUrl, setDevVerificationUrl] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -19,13 +17,19 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setSuccess("");
+    setDevVerificationUrl("");
     if (!formData.name || !formData.email || !formData.password)
       return setError("Please fill in all fields");
     try {
       setLoading(true);
       const response = await axiosInstance.post("/auth/register", formData);
-      login(response.data);
-      navigate("/");
+      setSuccess(
+        response.data?.message ||
+          "Account created. Please verify your email before logging in."
+      );
+      setDevVerificationUrl(response.data?.devVerificationUrl || "");
+      setFormData({ name: "", email: "", password: "" });
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
@@ -83,6 +87,20 @@ const Register = () => {
             <div style={styles.errorBox}>
               <span style={styles.errorIcon}>!</span>
               {error}
+            </div>
+          )}
+
+          {success && (
+            <div style={styles.successBox}>
+              <span style={styles.successIcon}>✓</span>
+              <div>
+                <p style={styles.successMessage}>{success}</p>
+                {devVerificationUrl && (
+                  <a href={devVerificationUrl} style={styles.devLink}>
+                    Open local verification link
+                  </a>
+                )}
+              </div>
             </div>
           )}
 
@@ -334,6 +352,43 @@ const styles = {
     fontSize: "11px",
     fontWeight: 700,
     flexShrink: 0,
+  },
+  successBox: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "10px",
+    backgroundColor: "#dcfce7",
+    border: "1px solid #bbf7d0",
+    borderRadius: "10px",
+    padding: "12px 16px",
+    marginBottom: "20px",
+    fontSize: "13px",
+    color: "#166534",
+    fontWeight: 500,
+  },
+  successIcon: {
+    width: "18px",
+    height: "18px",
+    borderRadius: "50%",
+    backgroundColor: "#16a34a",
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "11px",
+    fontWeight: 700,
+    flexShrink: 0,
+  },
+  successMessage: {
+    margin: 0,
+    lineHeight: 1.5,
+  },
+  devLink: {
+    display: "inline-block",
+    marginTop: "6px",
+    color: "#2563eb",
+    fontWeight: 700,
+    textDecoration: "none",
   },
 
   form: {

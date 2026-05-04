@@ -4,8 +4,10 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
+const crypto = require("crypto");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const sendEmail = require("../utils/sendEmail");
 
 // Generate JWT
 const generateToken = (user) => {
@@ -19,6 +21,10 @@ const generateToken = (user) => {
       expiresIn: "7d",
     }
   );
+};
+
+const hashToken = (token) => {
+  return crypto.createHash("sha256").update(token).digest("hex");
 };
 
 // ─── Register ────────────────────────────────────────────
@@ -51,21 +57,42 @@ router.post("/register", async (req, res) => {
       salt
     );
 
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const hashedVerificationToken = hashToken(verificationToken);
+
     // Create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
+      emailVerificationToken: hashedVerificationToken,
+      emailVerificationExpires: Date.now() + 60 * 60 * 1000,
+    });
+
+    const frontendUrl =
+      process.env.FRONTEND_URL || "http://localhost:5173";
+    const verificationUrl = `${frontendUrl}/verify-email/${verificationToken}`;
+
+    const emailResult = await sendEmail({
+      to: user.email,
+      subject: "Verify your TeamTask account",
+      html: `
+        <h2>Verify your email</h2>
+        <p>Hello ${user.name},</p>
+        <p>Click the link below to verify your TeamTask account:</p>
+        <p><a href="${verificationUrl}">${verificationUrl}</a></p>
+        <p>This link expires in 1 hour.</p>
+      `,
     });
 
     res.status(201).json({
-      token: generateToken(user),
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-      },
+      message:
+        "Account created. Please verify your email before logging in.",
+      ...(emailResult.skipped
+        ? {
+            devVerificationUrl: verificationUrl,
+          }
+        : {}),
     });
   } catch (error) {
     res.status(500).json({
@@ -110,6 +137,12 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    if (user.isEmailVerified === false) {
+      return res.status(403).json({
+        message: "Please verify your email before login",
+      });
+    }
+
     res.status(200).json({
       token: generateToken(user),
       user: {
@@ -118,6 +151,39 @@ router.post("/login", async (req, res) => {
         email: user.email,
         role: user.role,
       },
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Server error",
+      error: error.message,
+    });
+  }
+});
+
+// Verify Email
+router.get("/verify-email/:token", async (req, res) => {
+  try {
+    const hashedToken = hashToken(req.params.token);
+
+    const user = await User.findOne({
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({
+        message: "Verification link is invalid or expired",
+      });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Email verified successfully. You can now log in.",
     });
   } catch (error) {
     res.status(500).json({

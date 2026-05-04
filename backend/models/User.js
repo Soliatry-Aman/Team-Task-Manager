@@ -31,6 +31,15 @@ const userSchema = new mongoose.Schema(
       default: "Member",
     },
 
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    emailVerificationToken: String,
+
+    emailVerificationExpires: Date,
+
     projects: [
       {
         type: mongoose.Schema.Types.ObjectId,

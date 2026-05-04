@@ -10,6 +10,8 @@ backend/.env
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*-dev.log
+*-dev.err.log
 
 # OS files
 .DS_Store
@@ -24,3 +26,6 @@ frontend/dist/
 
 # Coverage
 coverage/
+
+# Local notes
+PROJECT_EXPLANATION.md
