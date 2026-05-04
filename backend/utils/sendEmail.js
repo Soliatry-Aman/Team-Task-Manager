@@ -1,28 +1,17 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
 
 const sendEmail = async ({ to, subject, html }) => {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM } =
-    process.env;
+  const { RESEND_API_KEY, EMAIL_FROM } = process.env;
 
-  if (!SMTP_HOST || !SMTP_PORT || !SMTP_USER || !SMTP_PASS) {
+  // Skip if no API key configured (dev mode)
+  if (!RESEND_API_KEY) {
     return { sent: false, skipped: true };
   }
 
-  const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: Number(SMTP_PORT),
-    secure: Number(SMTP_PORT) === 465,
-    auth: {
-      user: SMTP_USER,
-      pass: SMTP_PASS,
-    },
-    connectionTimeout: 10000,  // 10s to establish connection
-    greetingTimeout: 5000,     // 5s for server greeting
-    socketTimeout: 15000,      // 15s for data transfer
-  });
+  const resend = new Resend(RESEND_API_KEY);
 
-  await transporter.sendMail({
-    from: EMAIL_FROM || SMTP_USER,
+  await resend.emails.send({
+    from: EMAIL_FROM || "TeamTask <onboarding@resend.dev>",
     to,
     subject,
     html,
