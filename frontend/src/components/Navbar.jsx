@@ -163,8 +163,6 @@ const Navbar = ({ onMenuToggle }) => {
           <div style={styles.userInfo}>
             <div style={styles.userMeta} className="nav-user-meta">
               <p style={styles.userName}>{user?.name || "Guest"}</p>
-
-              <p style={styles.userRole}>Admin </p>
             </div>
 
             <div style={styles.avatar}>{initials}</div>
@@ -315,14 +313,6 @@ const styles = {
     fontSize: "13px",
     fontWeight: 600,
     color: "#0f172a",
-  },
-
-  userRole: {
-    fontSize: "10px",
-    fontWeight: 600,
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
   },
 
   avatar: {
