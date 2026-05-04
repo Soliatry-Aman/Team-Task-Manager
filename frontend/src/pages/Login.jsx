@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
+
+const RESEND_COOLDOWN = 60;
 
 const Login = () => {
   const navigate = useNavigate();
@@ -12,6 +14,19 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Resend verification state
+  const [showResend, setShowResend] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    timerRef.current = setTimeout(() => setCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timerRef.current);
+  }, [cooldown]);
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -19,6 +34,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setShowResend(false);
+    setResendMessage("");
     if (!formData.email || !formData.password)
       return setError("Please fill in all fields");
     try {
@@ -27,9 +44,29 @@ const Login = () => {
       login(response.data);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed");
+      const msg = err.response?.data?.message || "Login failed";
+      setError(msg);
+      // Show resend button if user is unverified
+      if (err.response?.status === 403) setShowResend(true);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (cooldown > 0 || resendLoading) return;
+    setResendMessage("");
+    try {
+      setResendLoading(true);
+      const response = await axiosInstance.post("/auth/resend-verification", {
+        email: formData.email,
+      });
+      setResendMessage(response.data?.message || "Verification email sent!");
+      setCooldown(RESEND_COOLDOWN);
+    } catch (err) {
+      setResendMessage(err.response?.data?.message || "Failed to resend. Try again.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -73,7 +110,39 @@ const Login = () => {
           {error && (
             <div style={styles.errorBox}>
               <span style={styles.errorIcon}>!</span>
-              {error}
+              <div style={{ flex: 1 }}>
+                <span>{error}</span>
+                {showResend && (
+                  <div style={{ marginTop: "10px" }}>
+                    {resendMessage ? (
+                      <p style={{ fontSize: "12px", color: "#166534", margin: 0 }}>
+                        ✓ {resendMessage}
+                      </p>
+                    ) : (
+                      <button
+                        onClick={handleResend}
+                        disabled={cooldown > 0 || resendLoading}
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: 600,
+                          color: cooldown > 0 || resendLoading ? "#94a3b8" : "#2563eb",
+                          background: "none",
+                          border: "none",
+                          padding: 0,
+                          cursor: cooldown > 0 || resendLoading ? "not-allowed" : "pointer",
+                          textDecoration: "underline",
+                        }}
+                      >
+                        {resendLoading
+                          ? "Sending…"
+                          : cooldown > 0
+                          ? `Resend in ${cooldown}s`
+                          : "Resend verification email"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
