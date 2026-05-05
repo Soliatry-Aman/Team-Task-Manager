@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
 
     emailVerificationExpires: Date,
 
+    passwordResetToken: String,
+
+    passwordResetExpires: Date,
+
     projects: [
       {
         type: mongoose.Schema.Types.ObjectId,
