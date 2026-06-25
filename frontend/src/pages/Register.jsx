@@ -1,32 +1,15 @@
-import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axiosInstance from "../api/axiosInstance";
-
-const RESEND_COOLDOWN = 60; // seconds
+import { useAuth } from "../context/AuthContext";
 
 const Register = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
-  // After registration
-  const [emailSent, setEmailSent] = useState(false);
-  const [registeredEmail, setRegisteredEmail] = useState("");
-  const [devVerificationUrl, setDevVerificationUrl] = useState("");
-
-  // Resend
-  const [resendLoading, setResendLoading] = useState(false);
-  const [resendMessage, setResendMessage] = useState("");
-  const [resendError, setResendError] = useState("");
-  const [cooldown, setCooldown] = useState(0);
-  const timerRef = useRef(null);
-
-  // Countdown tick
-  useEffect(() => {
-    if (cooldown <= 0) return;
-    timerRef.current = setTimeout(() => setCooldown((c) => c - 1), 1000);
-    return () => clearTimeout(timerRef.current);
-  }, [cooldown]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -40,36 +23,12 @@ const Register = () => {
     try {
       setLoading(true);
       const response = await axiosInstance.post("/auth/register", formData);
-      setRegisteredEmail(formData.email);
-      setDevVerificationUrl(response.data?.devVerificationUrl || "");
-      setEmailSent(true);
-      setCooldown(RESEND_COOLDOWN);
-      setFormData({ name: "", email: "", password: "" });
+      login(response.data);
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleResend = async () => {
-    if (cooldown > 0 || resendLoading) return;
-    setResendError("");
-    setResendMessage("");
-    try {
-      setResendLoading(true);
-      const response = await axiosInstance.post("/auth/resend-verification", {
-        email: registeredEmail,
-      });
-      setResendMessage(response.data?.message || "Verification email resent!");
-      setDevVerificationUrl(response.data?.devVerificationUrl || "");
-      setCooldown(RESEND_COOLDOWN);
-    } catch (err) {
-      setResendError(
-        err.response?.data?.message || "Failed to resend. Please try again."
-      );
-    } finally {
-      setResendLoading(false);
     }
   };
 
@@ -96,9 +55,6 @@ const Register = () => {
         .reg-footer-link:hover {
           text-decoration: underline;
         }
-        .resend-btn:hover:not(:disabled) {
-          background-color: #f1f5f9 !important;
-        }
       `}</style>
 
       {/* Left Panel — Form */}
@@ -117,182 +73,115 @@ const Register = () => {
             <div style={styles.brandMark}>
               <span style={styles.brandLetter}>T</span>
             </div>
-            {emailSent ? (
-              <>
-                <h1 style={styles.formTitle}>Check your inbox</h1>
-                <p style={styles.formSubtitle}>Verification email sent</p>
-              </>
-            ) : (
-              <>
-                <h1 style={styles.formTitle}>Create your account</h1>
-                <p style={styles.formSubtitle}>Join your team workspace in seconds</p>
-              </>
-            )}
+            <h1 style={styles.formTitle}>Create your account</h1>
+            <p style={styles.formSubtitle}>Join your team workspace in seconds</p>
           </div>
 
-          {/* ── Email sent: Inbox screen ── */}
-          {emailSent ? (
-            <div style={styles.inboxScreen}>
-              <div style={styles.inboxIconWrap}>✉</div>
-
-              <p style={styles.inboxText}>
-                We sent a verification link to{" "}
-                <strong style={{ color: "#0f172a" }}>{registeredEmail}</strong>.
-                {" "}Click the link in the email to activate your account.
-              </p>
-
-              <p style={styles.inboxHint}>
-                Didn't receive it? Check your spam folder or resend below.
-              </p>
-
-              {/* Dev-only link */}
-              {devVerificationUrl && (
-                <div style={styles.devBox}>
-                  <span style={styles.devLabel}>🔧 Dev mode — no SMTP configured</span>
-                  <a href={devVerificationUrl} style={styles.devLink}>
-                    Click here to verify locally →
-                  </a>
-                </div>
-              )}
-
-              {/* Resend feedback */}
-              {resendMessage && (
-                <p style={styles.resendSuccess}>✓ {resendMessage}</p>
-              )}
-              {resendError && (
-                <p style={styles.resendErrorText}>! {resendError}</p>
-              )}
-
-              {/* Resend button with countdown */}
-              <button
-                onClick={handleResend}
-                disabled={cooldown > 0 || resendLoading}
-                className="resend-btn"
-                style={{
-                  ...styles.resendBtn,
-                  ...(cooldown > 0 || resendLoading ? styles.resendBtnDisabled : {}),
-                }}
-              >
-                {resendLoading
-                  ? "Sending…"
-                  : cooldown > 0
-                  ? `Resend in ${cooldown}s`
-                  : "Resend verification email"}
-              </button>
-
-              <Link to="/login" style={styles.backToLogin}>
-                ← Back to login
-              </Link>
+          {/* Error */}
+          {error && (
+            <div style={styles.errorBox}>
+              <span style={styles.errorIcon}>!</span>
+              {error}
             </div>
-          ) : (
-            <>
-              {/* Error */}
-              {error && (
-                <div style={styles.errorBox}>
-                  <span style={styles.errorIcon}>!</span>
-                  {error}
-                </div>
-              )}
-
-              {/* Form */}
-              <form onSubmit={handleSubmit} style={styles.form}>
-                {/* Name */}
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Full name</label>
-                  <div style={styles.inputWrapper}>
-                    <svg style={styles.inputIcon} viewBox="0 0 20 20" fill="none">
-                      <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                    <input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="Aman Raj"
-                      style={styles.input}
-                      className="reg-input"
-                    />
-                  </div>
-                </div>
-
-                {/* Email */}
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Email address</label>
-                  <div style={styles.inputWrapper}>
-                    <svg style={styles.inputIcon} viewBox="0 0 20 20" fill="none">
-                      <path d="M2.5 6.5l7.5 5 7.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      <rect x="1.5" y="4.5" width="17" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                    </svg>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      placeholder="you@company.com"
-                      style={styles.input}
-                      className="reg-input"
-                    />
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div style={styles.fieldGroup}>
-                  <label style={styles.label}>Password</label>
-                  <div style={styles.inputWrapper}>
-                    <svg style={styles.inputIcon} viewBox="0 0 20 20" fill="none">
-                      <rect x="4" y="9" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Password"
-                      style={styles.input}
-                      className="reg-input"
-                    />
-                  </div>
-                  <p style={styles.hint}>Use a strong password with letters &amp; numbers</p>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{ ...styles.submitBtn, ...(loading ? styles.submitBtnDisabled : {}) }}
-                  className="reg-submit"
-                >
-                  {loading ? (
-                    <span style={styles.btnInner}>
-                      <span style={styles.spinner} />
-                      Creating account…
-                    </span>
-                  ) : (
-                    <span style={styles.btnInner}>
-                      Create account
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </span>
-                  )}
-                </button>
-              </form>
-
-              <p style={styles.footerText}>
-                Already have an account?{" "}
-                <Link to="/login" style={styles.footerLink} className="reg-footer-link">
-                  Sign in →
-                </Link>
-              </p>
-
-              <p style={styles.legalText}>
-                By registering, you agree to our{" "}
-                <span style={styles.legalLink}>Terms of Service</span> and{" "}
-                <span style={styles.legalLink}>Privacy Policy</span>.
-              </p>
-            </>
           )}
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} style={styles.form}>
+            {/* Name */}
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Full name</label>
+              <div style={styles.inputWrapper}>
+                <svg style={styles.inputIcon} viewBox="0 0 20 20" fill="none">
+                  <circle cx="10" cy="7" r="3" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Aman Raj"
+                  style={styles.input}
+                  className="reg-input"
+                />
+              </div>
+            </div>
+
+            {/* Email */}
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Email address</label>
+              <div style={styles.inputWrapper}>
+                <svg style={styles.inputIcon} viewBox="0 0 20 20" fill="none">
+                  <path d="M2.5 6.5l7.5 5 7.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                  <rect x="1.5" y="4.5" width="17" height="11" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                </svg>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="you@company.com"
+                  style={styles.input}
+                  className="reg-input"
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div style={styles.fieldGroup}>
+              <label style={styles.label}>Password</label>
+              <div style={styles.inputWrapper}>
+                <svg style={styles.inputIcon} viewBox="0 0 20 20" fill="none">
+                  <rect x="4" y="9" width="12" height="8" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                  <path d="M7 9V6.5a3 3 0 016 0V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                </svg>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Password"
+                  style={styles.input}
+                  className="reg-input"
+                />
+              </div>
+              <p style={styles.hint}>Use a strong password with letters &amp; numbers</p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              style={{ ...styles.submitBtn, ...(loading ? styles.submitBtnDisabled : {}) }}
+              className="reg-submit"
+            >
+              {loading ? (
+                <span style={styles.btnInner}>
+                  <span style={styles.spinner} />
+                  Creating account…
+                </span>
+              ) : (
+                <span style={styles.btnInner}>
+                  Create account
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              )}
+            </button>
+          </form>
+
+          <p style={styles.footerText}>
+            Already have an account?{" "}
+            <Link to="/login" style={styles.footerLink} className="reg-footer-link">
+              Sign in →
+            </Link>
+          </p>
+
+          <p style={styles.legalText}>
+            By registering, you agree to our{" "}
+            <span style={styles.legalLink}>Terms of Service</span> and{" "}
+            <span style={styles.legalLink}>Privacy Policy</span>.
+          </p>
         </div>
       </div>
 
@@ -417,90 +306,6 @@ const styles = {
   formSubtitle: {
     fontSize: "15px",
     color: "#64748b",
-  },
-
-  /* ── Inbox screen ── */
-  inboxScreen: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    textAlign: "center",
-    gap: "12px",
-  },
-  inboxIconWrap: {
-    fontSize: "40px",
-    marginBottom: "4px",
-  },
-  inboxText: {
-    fontSize: "14px",
-    color: "#475569",
-    lineHeight: 1.6,
-    margin: 0,
-  },
-  inboxHint: {
-    fontSize: "12px",
-    color: "#94a3b8",
-    margin: 0,
-  },
-  devBox: {
-    width: "100%",
-    backgroundColor: "#fefce8",
-    border: "1px solid #fde68a",
-    borderRadius: "10px",
-    padding: "12px 16px",
-    textAlign: "left",
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-  },
-  devLabel: {
-    fontSize: "11px",
-    fontWeight: 600,
-    color: "#92400e",
-  },
-  devLink: {
-    fontSize: "13px",
-    color: "#2563eb",
-    fontWeight: 600,
-    textDecoration: "none",
-    wordBreak: "break-all",
-  },
-  resendSuccess: {
-    fontSize: "13px",
-    color: "#166534",
-    fontWeight: 500,
-    margin: 0,
-  },
-  resendErrorText: {
-    fontSize: "13px",
-    color: "#dc2626",
-    fontWeight: 500,
-    margin: 0,
-  },
-  resendBtn: {
-    width: "100%",
-    padding: "12px 20px",
-    backgroundColor: "#fff",
-    color: "#0f172a",
-    border: "1px solid rgba(15,23,42,0.15)",
-    borderRadius: "10px",
-    fontSize: "14px",
-    fontWeight: 600,
-    cursor: "pointer",
-    transition: "background-color 150ms ease",
-    marginTop: "4px",
-  },
-  resendBtnDisabled: {
-    color: "#94a3b8",
-    cursor: "not-allowed",
-    backgroundColor: "#f8fafc",
-  },
-  backToLogin: {
-    fontSize: "13px",
-    color: "#64748b",
-    fontWeight: 500,
-    textDecoration: "none",
-    marginTop: "4px",
   },
 
   /* ── Error box ── */
