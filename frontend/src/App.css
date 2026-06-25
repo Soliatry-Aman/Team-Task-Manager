@@ -1,9 +1,3 @@
-/* ─── App.css ───────────────────────────────────────────────
-   Global app-level styles that complement index.css.
-   Vite/hero boilerplate has been removed.
-   All design tokens live in index.css (:root).
-──────────────────────────────────────────────────────────── */
-
 /* ── Layout shell ── */
 #root {
   min-height: 100vh;

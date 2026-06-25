@@ -55,10 +55,29 @@ const Register = () => {
         .reg-footer-link:hover {
           text-decoration: underline;
         }
+
+        /* On mobile, hide the decorative right panel */
+        @media (max-width: 767px) {
+          .reg-right-panel { display: none !important; }
+          .reg-left-panel {
+            padding: 24px 20px !important;
+          }
+          .reg-form-title {
+            font-size: 24px !important;
+          }
+          .reg-input {
+            font-size: 15px !important;
+            padding: 13px 14px 13px 42px !important;
+          }
+          .reg-submit {
+            padding: 14px 20px !important;
+            font-size: 15px !important;
+          }
+        }
       `}</style>
 
       {/* Left Panel — Form */}
-      <div style={styles.leftPanel}>
+      <div className="reg-left-panel" style={styles.leftPanel}>
         <div style={styles.formCard}>
           {/* Top brand link */}
           <Link to="/login" style={styles.backLink}>
@@ -73,7 +92,7 @@ const Register = () => {
             <div style={styles.brandMark}>
               <span style={styles.brandLetter}>T</span>
             </div>
-            <h1 style={styles.formTitle}>Create your account</h1>
+            <h1 className="reg-form-title" style={styles.formTitle}>Create your account</h1>
             <p style={styles.formSubtitle}>Join your team workspace in seconds</p>
           </div>
 
@@ -185,8 +204,8 @@ const Register = () => {
         </div>
       </div>
 
-      {/* Right Panel — Visual */}
-      <div style={styles.rightPanel}>
+      {/* Right Panel — Visual (desktop only) */}
+      <div className="reg-right-panel" style={styles.rightPanel}>
         <div style={styles.dots} aria-hidden="true" />
         <div style={styles.rightContent}>
           {/* Floating cards */}

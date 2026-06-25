@@ -31,6 +31,7 @@ const TaskCard = ({ task, isAdmin = false, onStatusUpdate, onDelete }) => {
         }
         .task-status-select {
           appearance: none;
+          -webkit-appearance: none;
           background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
           background-repeat: no-repeat;
           background-position: right 10px center;
@@ -42,13 +43,39 @@ const TaskCard = ({ task, isAdmin = false, onStatusUpdate, onDelete }) => {
           color: #dc2626 !important;
           border-color: rgba(239,68,68,0.2) !important;
         }
+
+        /* Stack card vertically on mobile */
+        @media (max-width: 600px) {
+          .task-card-inner {
+            flex-direction: column !important;
+            gap: 14px !important;
+          }
+          .task-card-right {
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            min-width: unset !important;
+            width: 100% !important;
+            gap: 8px !important;
+          }
+          .task-status-select {
+            flex: 1 !important;
+            min-width: 130px !important;
+            font-size: 13px !important;
+            padding: 9px 28px 9px 10px !important;
+          }
+          .task-delete-btn {
+            width: auto !important;
+            flex-shrink: 0 !important;
+          }
+        }
       `}</style>
 
       <div className="task-card" style={styles.card}>
         {/* Overdue stripe */}
         {isOverdue && <div style={styles.overdueStripe} />}
 
-        <div style={styles.inner}>
+        <div className="task-card-inner" style={styles.inner}>
           {/* Left */}
           <div style={styles.left}>
             {/* Title row */}
@@ -99,7 +126,7 @@ const TaskCard = ({ task, isAdmin = false, onStatusUpdate, onDelete }) => {
           </div>
 
           {/* Right */}
-          <div style={styles.right}>
+          <div className="task-card-right" style={styles.right}>
             <Badge text={task.priority} type="priority" />
 
             {canUpdate ? (

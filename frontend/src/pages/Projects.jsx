@@ -73,13 +73,28 @@ const Projects = () => {
           background-color: #2563eb !important;
           box-shadow: 0 4px 14px rgba(37,99,235,0.3) !important;
         }
+
+        @media (max-width: 767px) {
+          .projects-heading { font-size: 22px !important; }
+          .projects-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .new-project-btn {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .projects-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
       `}</style>
 
       <div className="projects-wrap" style={styles.wrapper}>
         {/* ── Header ── */}
-        <div style={styles.header}>
+        <div className="projects-header" style={styles.header}>
           <div>
-            <h1 style={styles.heading}>Projects</h1>
+            <h1 className="projects-heading" style={styles.heading}>Projects</h1>
             <p style={styles.subheading}>
               {projects.length} {projects.length === 1 ? "project" : "projects"} in your workspace
             </p>
@@ -194,7 +209,7 @@ const Projects = () => {
             </button>
           </div>
         ) : (
-          <div style={styles.grid}>
+          <div className="projects-grid" style={styles.grid}>
             {projects.map((project) => (
               <ProjectCard
                 key={project._id}

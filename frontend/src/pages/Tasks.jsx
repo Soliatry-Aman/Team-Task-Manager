@@ -16,20 +16,9 @@ const Tasks = () => {
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const projectsRes = await axiosInstance.get("/projects");
-      const projects = projectsRes.data || [];
-
-      let allTasks = [];
-      for (const project of projects) {
-        const tasksRes = await axiosInstance.get(`/tasks/${project._id}`);
-        const projectTasks = tasksRes.data.map((task) => ({
-          ...task,
-          projectTitle: project.title,
-          isAdmin: project.admin?._id === user?.id,
-        }));
-        allTasks = [...allTasks, ...projectTasks];
-      }
-      setTasks(allTasks);
+      // Single API call — replaces the N+1 project loop
+      const res = await axiosInstance.get("/tasks/my");
+      setTasks(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       setError(err.response?.data?.message || "Failed to load tasks");
     } finally {
@@ -37,7 +26,10 @@ const Tasks = () => {
     }
   };
 
-  useEffect(() => { fetchTasks(); }, []);
+  useEffect(() => {
+    fetchTasks();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleStatusUpdate = async (taskId, status) => {
     try {
@@ -85,13 +77,17 @@ const Tasks = () => {
         }
         .tasks-wrap { animation: fadeUp 0.35s ease both; }
         .filter-pill:hover { background-color: #f1f5f9 !important; }
+
+        @media (max-width: 767px) {
+          .tasks-heading { font-size: 22px !important; }
+        }
       `}</style>
 
       <div className="tasks-wrap" style={styles.wrapper}>
         {/* ── Header ── */}
         <div style={styles.header}>
           <div>
-            <h1 style={styles.heading}>Tasks</h1>
+            <h1 className="tasks-heading" style={styles.heading}>Tasks</h1>
             <p style={styles.subheading}>
               {tasks.length} {tasks.length === 1 ? "task" : "tasks"} across all projects
             </p>
@@ -105,13 +101,16 @@ const Tasks = () => {
           </div>
         )}
 
-        {/* ── Filter Pills ── */}
-        <div style={styles.filters}>
+        {/* ── Filter Pills — horizontally scrollable on mobile ── */}
+        <div className="scroll-x" style={styles.filters}>
           {FILTERS.map((f) => {
             const count =
-              f === "All" ? tasks.length :
-              f === "Overdue"
-                ? tasks.filter((t) => new Date(t.dueDate) < now && t.status !== "Done").length
+              f === "All"
+                ? tasks.length
+                : f === "Overdue"
+                ? tasks.filter(
+                    (t) => new Date(t.dueDate) < now && t.status !== "Done"
+                  ).length
                 : tasks.filter((t) => t.status === f).length;
 
             const isActive = activeFilter === f;
@@ -126,10 +125,12 @@ const Tasks = () => {
                 }}
               >
                 {f}
-                <span style={{
-                  ...styles.filterCount,
-                  ...(isActive ? styles.filterCountActive : {}),
-                }}>
+                <span
+                  style={{
+                    ...styles.filterCount,
+                    ...(isActive ? styles.filterCountActive : {}),
+                  }}
+                >
                   {count}
                 </span>
               </button>
@@ -142,7 +143,12 @@ const Tasks = () => {
           <div style={styles.emptyState}>
             <div style={styles.emptyIcon}>
               <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-                <path d="M3 6.5h20M3 13h12M3 19.5h8" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round"/>
+                <path
+                  d="M3 6.5h20M3 13h12M3 19.5h8"
+                  stroke="#94a3b8"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
             <p style={styles.emptyTitle}>No tasks found</p>
@@ -192,7 +198,7 @@ const styles = {
     fontFamily: "'DM Sans', system-ui, sans-serif",
     display: "flex",
     flexDirection: "column",
-    gap: "24px",
+    gap: "20px",
   },
   header: {
     display: "flex",
@@ -225,17 +231,15 @@ const styles = {
     color: "#dc2626",
     fontWeight: 500,
   },
+  // scroll-x class handles the flex + overflow-x behavior
   filters: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    flexWrap: "wrap",
+    paddingBottom: "4px", // small breathing room for scrollbar
   },
   filterPill: {
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
-    padding: "6px 14px",
+    padding: "7px 14px",
     borderRadius: "99px",
     fontSize: "12px",
     fontWeight: 600,
@@ -246,6 +250,8 @@ const styles = {
     transition: "background-color 150ms ease, color 150ms ease, border-color 150ms ease",
     fontFamily: "'DM Sans', system-ui, sans-serif",
     letterSpacing: "-0.01em",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
   },
   filterPillActive: {
     backgroundColor: "#0f172a",
@@ -300,7 +306,7 @@ const styles = {
   groupList: {
     display: "flex",
     flexDirection: "column",
-    gap: "28px",
+    gap: "24px",
   },
   group: {
     display: "flex",

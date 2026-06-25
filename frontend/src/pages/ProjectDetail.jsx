@@ -55,6 +55,7 @@ const ProjectDetail = () => {
 
   useEffect(() => {
     fetchProjectData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const showAlert = (type, msg) => {
@@ -70,7 +71,7 @@ const ProjectDetail = () => {
     }, 3500);
   };
 
-  // ── Delete Project ──────────────────────────────────────────────
+  // ── Delete Project ────────────────────────────────────────────
   const handleDeleteProject = async () => {
     try {
       setDeleting(true);
@@ -83,7 +84,7 @@ const ProjectDetail = () => {
     }
   };
 
-  // ── Members ─────────────────────────────────────────────────────
+  // ── Members ──────────────────────────────────────────────────
   const handleAddMember = async (e) => {
     e.preventDefault();
 
@@ -109,7 +110,7 @@ const ProjectDetail = () => {
     }
   };
 
-  // ── Tasks ────────────────────────────────────────────────────────
+  // ── Tasks ─────────────────────────────────────────────────────
   const handleTaskChange = (e) => {
     setTaskData({ ...taskData, [e.target.name]: e.target.value });
   };
@@ -162,210 +163,293 @@ const ProjectDetail = () => {
   ];
 
   return (
-    <div style={styles.wrapper}>
-      {/* ── Header ── */}
-      <div style={styles.projectHeader}>
-        <div style={styles.projectAvatar}>
-          {project.title?.charAt(0).toUpperCase()}
+    <>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+
+        @media (max-width: 767px) {
+          .proj-header {
+            flex-wrap: wrap !important;
+            gap: 12px !important;
+          }
+          .proj-title-group {
+            flex: 1;
+            min-width: 0;
+          }
+          .proj-delete-row {
+            width: 100% !important;
+            order: 3 !important;
+          }
+          .proj-heading {
+            font-size: 20px !important;
+          }
+          .add-member-form {
+            flex-direction: column !important;
+          }
+          .add-member-form input {
+            width: 100% !important;
+          }
+          .add-member-form button {
+            width: 100% !important;
+          }
+          .create-task-form {
+            max-width: 100% !important;
+          }
+          .confirm-row {
+            flex-wrap: wrap !important;
+            gap: 8px !important;
+          }
+        }
+      `}</style>
+
+      <div style={styles.wrapper}>
+        {/* ── Header ── */}
+        <div className="proj-header" style={styles.projectHeader}>
+          <div style={styles.projectAvatar}>
+            {project.title?.charAt(0).toUpperCase()}
+          </div>
+
+          <div className="proj-title-group" style={{ flex: 1, minWidth: 0 }}>
+            <h1 className="proj-heading" style={styles.heading}>{project.title}</h1>
+            <p style={styles.subheading}>{project.description}</p>
+          </div>
+
+          {/* Delete button — admin only */}
+          {isAdmin && (
+            <div className="proj-delete-row">
+              {!deleteConfirm ? (
+                <button
+                  onClick={() => setDeleteConfirm(true)}
+                  style={styles.deleteBtn}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path
+                      d="M2 3.5h10M5.5 3.5V2.5a1 1 0 011-1h1a1 1 0 011 1v1M3.5 3.5l.7 7.5a1 1 0 001 .9h3.6a1 1 0 001-.9l.7-7.5"
+                      stroke="currentColor"
+                      strokeWidth="1.3"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Delete Project
+                </button>
+              ) : (
+                <div className="confirm-row" style={styles.confirmRow}>
+                  <span style={styles.confirmText}>Are you sure?</span>
+                  <button
+                    onClick={handleDeleteProject}
+                    disabled={deleting}
+                    style={styles.confirmYes}
+                  >
+                    {deleting ? "Deleting…" : "Yes, delete"}
+                  </button>
+                  <button
+                    onClick={() => setDeleteConfirm(false)}
+                    style={styles.confirmNo}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <h1 style={styles.heading}>{project.title}</h1>
-          <p style={styles.subheading}>{project.description}</p>
+        {/* ── Alerts ── */}
+        {error && (
+          <div style={styles.errorBox}>
+            <span>⚠</span> {error}
+          </div>
+        )}
+        {success && (
+          <div style={styles.successBox}>
+            <span>✓</span> {success}
+          </div>
+        )}
+
+        {/* ── Tabs — horizontally scrollable on mobile ── */}
+        <div className="scroll-x" style={styles.tabBar}>
+          {TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              style={{
+                ...styles.tab,
+                ...(activeTab === tab.key ? styles.tabActive : {}),
+              }}
+            >
+              {tab.label}
+              {tab.count !== null && (
+                <span
+                  style={{
+                    ...styles.tabCount,
+                    ...(activeTab === tab.key ? {} : styles.tabCountInactive),
+                  }}
+                >
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Delete button — admin only */}
-        {isAdmin && (
-          <div>
-            {!deleteConfirm ? (
-              <button
-                onClick={() => setDeleteConfirm(true)}
-                style={styles.deleteBtn}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 3.5h10M5.5 3.5V2.5a1 1 0 011-1h1a1 1 0 011 1v1M3.5 3.5l.7 7.5a1 1 0 001 .9h3.6a1 1 0 001-.9l.7-7.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Delete Project
-              </button>
-            ) : (
-              <div style={styles.confirmRow}>
-                <span style={styles.confirmText}>Are you sure?</span>
-                <button
-                  onClick={handleDeleteProject}
-                  disabled={deleting}
-                  style={styles.confirmYes}
-                >
-                  {deleting ? "Deleting…" : "Yes, delete"}
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm(false)}
-                  style={styles.confirmNo}
-                >
-                  Cancel
-                </button>
+        {/* ── Tasks Tab ── */}
+        {activeTab === "tasks" && (
+          <div style={styles.section}>
+            {tasks.length === 0 ? (
+              <div style={styles.emptyState}>
+                <div style={styles.emptyIcon}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 12l2 2 4-4M3 6h18M3 12h12M3 18h8" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                </div>
+                <p style={styles.emptyTitle}>No tasks yet</p>
+                <p style={styles.emptySub}>
+                  {isAdmin ? 'Create one in the "Create Task" tab.' : "Wait for the admin to assign tasks."}
+                </p>
               </div>
+            ) : (
+              tasks.map((task) => (
+                <TaskCard
+                  key={task._id}
+                  task={task}
+                  isAdmin={isAdmin}
+                  onStatusUpdate={handleStatusUpdate}
+                  onDelete={handleDeleteTask}
+                />
+              ))
             )}
           </div>
         )}
-      </div>
 
-      {/* ── Alerts ── */}
-      {error && (
-        <div style={styles.errorBox}>
-          <span>⚠</span> {error}
-        </div>
-      )}
-      {success && (
-        <div style={styles.successBox}>
-          <span>✓</span> {success}
-        </div>
-      )}
-
-      {/* ── Tabs ── */}
-      <div style={styles.tabBar}>
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            style={{
-              ...styles.tab,
-              ...(activeTab === tab.key ? styles.tabActive : {}),
-            }}
-          >
-            {tab.label}
-            {tab.count !== null && (
-              <span style={styles.tabCount}>{tab.count}</span>
+        {/* ── Members Tab ── */}
+        {activeTab === "members" && (
+          <div style={styles.section}>
+            {isAdmin && (
+              <form className="add-member-form" onSubmit={handleAddMember} style={styles.addMemberForm}>
+                <input
+                  type="email"
+                  placeholder="Enter member email"
+                  value={memberEmail}
+                  onChange={(e) => setMemberEmail(e.target.value)}
+                  style={styles.input}
+                />
+                <button type="submit" style={styles.addBtn}>
+                  Add Member
+                </button>
+              </form>
             )}
-          </button>
-        ))}
-      </div>
 
-      {/* ── Tasks Tab ── */}
-      {activeTab === "tasks" && (
-        <div style={styles.section}>
-          {tasks.length === 0 ? (
-            <p style={styles.emptyText}>No tasks yet. {isAdmin && "Create one in the \"Create Task\" tab."}</p>
-          ) : (
-            tasks.map((task) => (
-              <TaskCard
-                key={task._id}
-                task={task}
-                isAdmin={isAdmin}
-                onStatusUpdate={handleStatusUpdate}
-                onDelete={handleDeleteTask}
-              />
-            ))
-          )}
-        </div>
-      )}
+            {(project.members || []).map((member) => {
+              const isAdminMember = member._id === project.admin?._id;
 
-      {/* ── Members Tab ── */}
-      {activeTab === "members" && (
-        <div style={styles.section}>
-          {isAdmin && (
-            <form onSubmit={handleAddMember} style={styles.addMemberForm}>
-              <input
-                type="email"
-                placeholder="Enter member email"
-                value={memberEmail}
-                onChange={(e) => setMemberEmail(e.target.value)}
-                style={styles.input}
-              />
-              <button type="submit" style={styles.addBtn}>
-                Add Member
-              </button>
-            </form>
-          )}
+              return (
+                <div key={member._id} style={styles.memberRow}>
+                  <div style={styles.memberAvatar}>
+                    {member.name?.charAt(0).toUpperCase() || "?"}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={styles.memberName}>{member.name}</p>
+                    <p style={styles.memberEmail}>{member.email}</p>
+                  </div>
 
-          {(project.members || []).map((member) => {
-            const isAdminMember = member._id === project.admin?._id;
+                  <div style={styles.memberRight}>
+                    <Badge text={isAdminMember ? "Admin" : "Member"} type="status" />
+                    {isAdmin && !isAdminMember && (
+                      <button
+                        onClick={() => handleRemoveMember(member._id)}
+                        style={styles.removeBtn}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-            return (
-              <div key={member._id} style={styles.memberRow}>
-                <div>
-                  <p style={{ margin: 0, fontWeight: 600, fontSize: "14px" }}>{member.name}</p>
-                  <p style={{ margin: 0, fontSize: "12px", color: "#64748b" }}>{member.email}</p>
+        {/* ── Create Task Tab ── */}
+        {activeTab === "create" && isAdmin && (
+          <div style={styles.section}>
+            <form className="create-task-form" onSubmit={handleCreateTask} style={styles.form}>
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Task Title</label>
+                <input
+                  type="text"
+                  name="title"
+                  placeholder="e.g. Design homepage mockup"
+                  value={taskData.title}
+                  onChange={handleTaskChange}
+                  style={styles.input}
+                  required
+                />
+              </div>
+
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Description</label>
+                <textarea
+                  name="description"
+                  placeholder="Describe the task..."
+                  value={taskData.description}
+                  onChange={handleTaskChange}
+                  style={{ ...styles.input, minHeight: "80px", resize: "vertical", lineHeight: 1.6 }}
+                />
+              </div>
+
+              <div style={styles.formRow}>
+                <div style={{ ...styles.fieldGroup, flex: 1 }}>
+                  <label style={styles.label}>Due Date</label>
+                  <input
+                    type="date"
+                    name="dueDate"
+                    value={taskData.dueDate}
+                    onChange={handleTaskChange}
+                    style={styles.input}
+                  />
                 </div>
 
-                <div style={styles.memberRight}>
-                  <Badge text={isAdminMember ? "Admin" : "Member"} type="status" />
-                  {isAdmin && !isAdminMember && (
-                    <button
-                      onClick={() => handleRemoveMember(member._id)}
-                      style={styles.removeBtn}
-                    >
-                      Remove
-                    </button>
-                  )}
+                <div style={{ ...styles.fieldGroup, flex: 1 }}>
+                  <label style={styles.label}>Priority</label>
+                  <select
+                    name="priority"
+                    value={taskData.priority}
+                    onChange={handleTaskChange}
+                    style={styles.input}
+                  >
+                    <option>Low</option>
+                    <option>Medium</option>
+                    <option>High</option>
+                  </select>
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
 
-      {/* ── Create Task Tab ── */}
-      {activeTab === "create" && isAdmin && (
-        <div style={styles.section}>
-          <form onSubmit={handleCreateTask} style={styles.form}>
-            <input
-              type="text"
-              name="title"
-              placeholder="Task Title"
-              value={taskData.title}
-              onChange={handleTaskChange}
-              style={styles.input}
-              required
-            />
+              <div style={styles.fieldGroup}>
+                <label style={styles.label}>Assign To</label>
+                <select
+                  name="assignedTo"
+                  value={taskData.assignedTo}
+                  onChange={handleTaskChange}
+                  style={styles.input}
+                >
+                  <option value="">Select Member</option>
+                  {(project.members || []).map((member) => (
+                    <option key={member._id} value={member._id}>
+                      {member.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            <textarea
-              name="description"
-              placeholder="Task Description"
-              value={taskData.description}
-              onChange={handleTaskChange}
-              style={{ ...styles.input, minHeight: "80px", resize: "vertical" }}
-            />
-
-            <input
-              type="date"
-              name="dueDate"
-              value={taskData.dueDate}
-              onChange={handleTaskChange}
-              style={styles.input}
-            />
-
-            <select
-              name="priority"
-              value={taskData.priority}
-              onChange={handleTaskChange}
-              style={styles.input}
-            >
-              <option>Low</option>
-              <option>Medium</option>
-              <option>High</option>
-            </select>
-
-            <select
-              name="assignedTo"
-              value={taskData.assignedTo}
-              onChange={handleTaskChange}
-              style={styles.input}
-            >
-              <option value="">Select Member</option>
-              {(project.members || []).map((member) => (
-                <option key={member._id} value={member._id}>
-                  {member.name}
-                </option>
-              ))}
-            </select>
-
-            <button type="submit" style={styles.submitBtn}>
-              Create Task
-            </button>
-          </form>
-        </div>
-      )}
-    </div>
+              <button type="submit" style={styles.submitBtn}>
+                Create Task
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    </>
   );
 };
 
@@ -383,12 +467,11 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "16px",
-    flexWrap: "wrap",
   },
 
   projectAvatar: {
-    width: "50px",
-    height: "50px",
+    width: "48px",
+    height: "48px",
     borderRadius: "12px",
     background: "#eff6ff",
     display: "flex",
@@ -406,17 +489,18 @@ const styles = {
     color: "#0f172a",
     letterSpacing: "-0.02em",
     margin: 0,
+    wordBreak: "break-word",
   },
 
   subheading: {
     color: "#64748b",
-    fontSize: "14px",
+    fontSize: "13px",
     margin: "4px 0 0",
+    wordBreak: "break-word",
   },
 
-  // ── Delete project controls ──
   deleteBtn: {
-    display: "flex",
+    display: "inline-flex",
     alignItems: "center",
     gap: "6px",
     padding: "8px 14px",
@@ -428,7 +512,6 @@ const styles = {
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
-    transition: "background-color 150ms ease",
     whiteSpace: "nowrap",
   },
 
@@ -436,13 +519,13 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    flexWrap: "wrap",
   },
 
   confirmText: {
     fontSize: "13px",
     fontWeight: 600,
     color: "#dc2626",
+    whiteSpace: "nowrap",
   },
 
   confirmYes: {
@@ -455,6 +538,7 @@ const styles = {
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
+    whiteSpace: "nowrap",
   },
 
   confirmNo: {
@@ -467,6 +551,7 @@ const styles = {
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
+    whiteSpace: "nowrap",
   },
 
   errorBox: {
@@ -476,6 +561,9 @@ const styles = {
     borderRadius: "8px",
     fontSize: "13px",
     fontWeight: 500,
+    display: "flex",
+    gap: "8px",
+    alignItems: "center",
   },
 
   successBox: {
@@ -485,13 +573,16 @@ const styles = {
     borderRadius: "8px",
     fontSize: "13px",
     fontWeight: 500,
+    display: "flex",
+    gap: "8px",
+    alignItems: "center",
   },
 
+  // scroll-x class handles the overflow behavior
   tabBar: {
-    display: "flex",
-    gap: "6px",
     borderBottom: "1px solid rgba(15,23,42,0.07)",
     paddingBottom: "0",
+    gap: "4px",
   },
 
   tab: {
@@ -503,10 +594,12 @@ const styles = {
     fontSize: "13px",
     fontWeight: 600,
     color: "#64748b",
-    display: "flex",
+    display: "inline-flex",
     alignItems: "center",
     gap: "6px",
     fontFamily: "inherit",
+    whiteSpace: "nowrap",
+    flexShrink: 0,
     transition: "background-color 150ms ease, color 150ms ease",
   },
 
@@ -523,22 +616,58 @@ const styles = {
     fontWeight: 700,
   },
 
+  tabCountInactive: {
+    backgroundColor: "rgba(15,23,42,0.07)",
+    color: "#64748b",
+  },
+
   section: {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
   },
 
-  emptyText: {
-    fontSize: "14px",
+  emptyState: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "48px 24px",
+    backgroundColor: "#fff",
+    border: "1px dashed rgba(15,23,42,0.12)",
+    borderRadius: "14px",
+    textAlign: "center",
+    gap: "8px",
+  },
+
+  emptyIcon: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "12px",
+    backgroundColor: "#f8fafc",
+    border: "1px solid rgba(15,23,42,0.08)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: "8px",
+  },
+
+  emptyTitle: {
+    fontSize: "15px",
+    fontWeight: 700,
+    color: "#0f172a",
+    letterSpacing: "-0.02em",
+  },
+
+  emptySub: {
+    fontSize: "13px",
     color: "#94a3b8",
-    padding: "24px 0",
   },
 
   addMemberForm: {
     display: "flex",
     gap: "10px",
-    flexWrap: "wrap",
+    alignItems: "center",
   },
 
   input: {
@@ -551,6 +680,7 @@ const styles = {
     width: "100%",
     boxSizing: "border-box",
     backgroundColor: "#fff",
+    color: "#0f172a",
   },
 
   addBtn: {
@@ -564,26 +694,58 @@ const styles = {
     cursor: "pointer",
     fontFamily: "inherit",
     whiteSpace: "nowrap",
+    flexShrink: 0,
   },
 
   memberRow: {
     display: "flex",
-    justifyContent: "space-between",
     alignItems: "center",
-    padding: "14px 16px",
-    border: "1px solid #e2e8f0",
+    gap: "12px",
+    padding: "12px 16px",
+    border: "1px solid rgba(15,23,42,0.08)",
     borderRadius: "10px",
     backgroundColor: "#fff",
   },
 
+  memberAvatar: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    backgroundColor: "#eff6ff",
+    color: "#2563eb",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 700,
+    fontSize: "14px",
+    flexShrink: 0,
+  },
+
+  memberName: {
+    margin: 0,
+    fontWeight: 600,
+    fontSize: "13px",
+    color: "#0f172a",
+    letterSpacing: "-0.01em",
+  },
+
+  memberEmail: {
+    margin: 0,
+    fontSize: "11px",
+    color: "#64748b",
+    marginTop: "2px",
+    wordBreak: "break-all",
+  },
+
   memberRight: {
     display: "flex",
-    gap: "10px",
+    gap: "8px",
     alignItems: "center",
+    flexShrink: 0,
   },
 
   removeBtn: {
-    padding: "6px 12px",
+    padding: "5px 10px",
     border: "none",
     background: "#fee2e2",
     color: "#b91c1c",
@@ -597,8 +759,27 @@ const styles = {
   form: {
     display: "flex",
     flexDirection: "column",
+    gap: "14px",
+    maxWidth: "520px",
+  },
+
+  formRow: {
+    display: "flex",
     gap: "12px",
-    maxWidth: "480px",
+    flexWrap: "wrap",
+  },
+
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "6px",
+  },
+
+  label: {
+    fontSize: "12px",
+    fontWeight: 600,
+    color: "#374151",
+    letterSpacing: "-0.01em",
   },
 
   submitBtn: {
@@ -611,6 +792,7 @@ const styles = {
     fontWeight: 600,
     cursor: "pointer",
     fontFamily: "inherit",
+    transition: "background-color 150ms ease",
   },
 };
 

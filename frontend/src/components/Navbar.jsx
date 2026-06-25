@@ -36,24 +36,23 @@ const Navbar = ({ onMenuToggle }) => {
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
-  // ── Fetch all searchable data once ───────────────────────────
+  // ── Fetch all searchable data once (single API calls, no N+1) ───
   const loadData = useCallback(async () => {
     if (dataLoaded.current) return;
     try {
       setSearching(true);
-      const projectsRes = await axiosInstance.get("/projects");
-      const projects = projectsRes.data || [];
+      // Run both requests in parallel
+      const [projectsRes, tasksRes] = await Promise.all([
+        axiosInstance.get("/projects"),
+        axiosInstance.get("/tasks/my"),
+      ]);
 
-      let allTasks = [];
-      for (const project of projects) {
-        const tasksRes = await axiosInstance.get(`/tasks/${project._id}`);
-        const tasks = (tasksRes.data || []).map((t) => ({
-          ...t,
-          projectTitle: project.title,
-          projectId: project._id,
-        }));
-        allTasks = [...allTasks, ...tasks];
-      }
+      const projects = projectsRes.data || [];
+      const allTasks = (tasksRes.data || []).map((t) => ({
+        ...t,
+        projectTitle: t.projectTitle || t.project?.title || "Unknown",
+        projectId: t.project?._id || t.project,
+      }));
 
       dataCache.current = { projects, tasks: allTasks };
       dataLoaded.current = true;
@@ -234,8 +233,19 @@ const Navbar = ({ onMenuToggle }) => {
             font-size: 9px !important;
           }
 
+          /* On mobile the search expands to fill available space */
           .search-expanded {
-            max-width: 180px !important;
+            max-width: 200px !important;
+          }
+
+          /* Hide keyboard shortcut hint on mobile */
+          .search-kbd {
+            display: none !important;
+          }
+
+          /* Search button text shorter on mobile */
+          .search-btn-text-mobile {
+            display: none !important;
           }
         }
       `}</style>
@@ -295,7 +305,7 @@ const Navbar = ({ onMenuToggle }) => {
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <span style={styles.searchBtnText}>Search…</span>
-              <span style={styles.searchKbd}>⌘K</span>
+              <span className="search-kbd" style={styles.searchKbd}>⌘K</span>
             </button>
           )}
 

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
 import axiosInstance from "../api/axiosInstance";
 import { useAuth } from "../context/AuthContext";
 
@@ -35,8 +34,43 @@ const Login = () => {
 
   return (
     <div style={styles.root}>
-      {/* Left Panel — Brand */}
-      <div style={styles.leftPanel}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+        .login-input:focus {
+          border-color: #2563eb !important;
+          box-shadow: 0 0 0 3px rgba(37,99,235,0.12) !important;
+        }
+        .login-submit:hover:not(:disabled) {
+          background-color: #2563eb !important;
+          box-shadow: 0 4px 20px rgba(37,99,235,0.35) !important;
+        }
+
+        /* ── Mobile: hide left branding panel, show compact top header ── */
+        @media (max-width: 767px) {
+          .login-left-panel { display: none !important; }
+          .login-right-panel {
+            padding: 24px 20px !important;
+            align-items: flex-start !important;
+          }
+          .login-mobile-header {
+            display: flex !important;
+          }
+          .login-form-title {
+            font-size: 24px !important;
+          }
+        }
+        @media (min-width: 768px) {
+          .login-mobile-header { display: none !important; }
+        }
+      `}</style>
+
+      {/* Left Panel — Brand (desktop only) */}
+      <div className="login-left-panel" style={styles.leftPanel}>
         <div style={styles.grid} aria-hidden="true" />
         <div style={styles.leftContent}>
           <div style={styles.brandMark}>
@@ -61,11 +95,19 @@ const Login = () => {
       </div>
 
       {/* Right Panel — Form */}
-      <div style={styles.rightPanel}>
+      <div className="login-right-panel" style={styles.rightPanel}>
+        {/* Mobile brand header */}
+        <div className="login-mobile-header" style={styles.mobileHeader}>
+          <div style={styles.mobileBrandMark}>
+            <span style={styles.brandLetter}>T</span>
+          </div>
+          <span style={styles.mobileBrandName}>TeamTask</span>
+        </div>
+
         <div style={styles.formCard}>
           {/* Header */}
           <div style={styles.formHeader}>
-            <h1 style={styles.formTitle}>Welcome back</h1>
+            <h1 className="login-form-title" style={styles.formTitle}>Welcome back</h1>
             <p style={styles.formSubtitle}>Sign in to your workspace</p>
           </div>
 
@@ -93,8 +135,8 @@ const Login = () => {
                   onChange={handleChange}
                   placeholder="you@company.com"
                   style={styles.input}
-                  onFocus={e => Object.assign(e.target.style, styles.inputFocus)}
-                  onBlur={e => Object.assign(e.target.style, styles.inputBlur)}
+                  className="login-input"
+                  autoComplete="email"
                 />
               </div>
             </div>
@@ -113,8 +155,8 @@ const Login = () => {
                   onChange={handleChange}
                   placeholder="••••••••"
                   style={styles.input}
-                  onFocus={e => Object.assign(e.target.style, styles.inputFocus)}
-                  onBlur={e => Object.assign(e.target.style, styles.inputBlur)}
+                  className="login-input"
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -122,12 +164,11 @@ const Login = () => {
             <button
               type="submit"
               disabled={loading}
+              className="login-submit"
               style={{
                 ...styles.submitBtn,
                 ...(loading ? styles.submitBtnDisabled : {}),
               }}
-              onMouseEnter={e => !loading && Object.assign(e.target.style, styles.submitBtnHover)}
-              onMouseLeave={e => !loading && Object.assign(e.target.style, styles.submitBtnLeave)}
             >
               {loading ? (
                 <span style={styles.btnInner}>
@@ -147,22 +188,13 @@ const Login = () => {
 
           {/* Footer */}
           <p style={styles.footerText}>
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link to="/register" style={styles.footerLink}>
               Create one →
             </Link>
           </p>
         </div>
       </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
     </div>
   );
 };
@@ -175,7 +207,7 @@ const styles = {
     backgroundColor: "#f6f5f2",
   },
 
-  /* ── Left Panel ── */
+  /* ── Left Panel (desktop only) ── */
   leftPanel: {
     display: "flex",
     flexDirection: "column",
@@ -186,6 +218,7 @@ const styles = {
     padding: "48px",
     position: "relative",
     overflow: "hidden",
+    flexShrink: 0,
   },
   grid: {
     position: "absolute",
@@ -269,10 +302,33 @@ const styles = {
     textTransform: "uppercase",
   },
 
+  /* ── Mobile header (shown only on mobile) ── */
+  mobileHeader: {
+    alignItems: "center",
+    gap: "10px",
+    marginBottom: "32px",
+  },
+  mobileBrandMark: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "10px",
+    backgroundColor: "#0f172a",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  mobileBrandName: {
+    fontSize: "18px",
+    fontWeight: 800,
+    color: "#0f172a",
+    letterSpacing: "-0.02em",
+  },
+
   /* ── Right Panel ── */
   rightPanel: {
     flex: 1,
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
     padding: "48px 32px",
@@ -281,10 +337,10 @@ const styles = {
   formCard: {
     width: "100%",
     maxWidth: "420px",
-    animation: "fadeUp 0.5s var(--ease-out, ease) both",
+    animation: "fadeUp 0.5s ease both",
   },
   formHeader: {
-    marginBottom: "36px",
+    marginBottom: "32px",
   },
   formTitle: {
     fontSize: "30px",
@@ -298,8 +354,6 @@ const styles = {
     color: "#64748b",
     fontWeight: 400,
   },
-
-  /* Error */
   errorBox: {
     display: "flex",
     alignItems: "center",
@@ -326,8 +380,6 @@ const styles = {
     fontWeight: 700,
     flexShrink: 0,
   },
-
-  /* Form */
   form: {
     display: "flex",
     flexDirection: "column",
@@ -360,8 +412,8 @@ const styles = {
   },
   input: {
     width: "100%",
-    padding: "12px 14px 12px 42px",
-    fontSize: "14px",
+    padding: "13px 14px 13px 42px",
+    fontSize: "15px",
     fontFamily: "'DM Sans', system-ui, sans-serif",
     backgroundColor: "#ffffff",
     border: "1px solid rgba(15,23,42,0.12)",
@@ -371,37 +423,19 @@ const styles = {
     transition: "border-color 150ms ease, box-shadow 150ms ease",
     boxSizing: "border-box",
   },
-  inputFocus: {
-    borderColor: "#2563eb",
-    boxShadow: "0 0 0 3px rgba(37,99,235,0.12)",
-  },
-  inputBlur: {
-    borderColor: "rgba(15,23,42,0.12)",
-    boxShadow: "none",
-  },
-
-  /* Submit Button */
   submitBtn: {
     width: "100%",
-    padding: "13px 20px",
+    padding: "14px 20px",
     backgroundColor: "#0f172a",
     color: "#fff",
     border: "none",
     borderRadius: "10px",
-    fontSize: "14px",
+    fontSize: "15px",
     fontWeight: 600,
     cursor: "pointer",
-    transition: "background-color 150ms ease, transform 100ms ease, box-shadow 150ms ease",
+    transition: "background-color 150ms ease, box-shadow 150ms ease",
     letterSpacing: "-0.01em",
     marginTop: "4px",
-  },
-  submitBtnHover: {
-    backgroundColor: "#2563eb",
-    boxShadow: "0 4px 20px rgba(37,99,235,0.35)",
-  },
-  submitBtnLeave: {
-    backgroundColor: "#0f172a",
-    boxShadow: "none",
   },
   submitBtnDisabled: {
     backgroundColor: "#94a3b8",
@@ -414,19 +448,17 @@ const styles = {
     gap: "8px",
   },
   spinner: {
-    width: "14px",
-    height: "14px",
+    width: "15px",
+    height: "15px",
     border: "2px solid rgba(255,255,255,0.3)",
     borderTopColor: "#fff",
     borderRadius: "50%",
     animation: "spin 0.7s linear infinite",
     display: "inline-block",
   },
-
-  /* Footer */
   footerText: {
     textAlign: "center",
-    fontSize: "13px",
+    fontSize: "14px",
     color: "#64748b",
   },
   footerLink: {

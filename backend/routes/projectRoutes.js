@@ -1,4 +1,3 @@
-// routes/projectRoutes.js
 // Project management routes
 
 const express = require("express");

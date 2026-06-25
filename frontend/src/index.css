@@ -7,14 +7,14 @@
 }
 
 body {
-  /* High-end system font stack */
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  background-color: #f8fafc;
+  font-family: 'DM Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #f6f5f2;
   color: #0f172a;
   min-height: 100vh;
-  /* Makes fonts look crisper on high-res screens */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent horizontal overflow on mobile */
+  overflow-x: hidden;
 }
 
 a {
@@ -22,16 +22,12 @@ a {
   color: inherit;
 }
 
-/* Updated Button Reset: 
-   We removed 'background: none' to prevent ghosting 
-   on buttons that don't have utility classes assigned yet. */
 button {
   cursor: pointer;
   font-family: inherit;
   border: none;
 }
 
-/* Subtle transitions for all interactive elements */
 button, a, .transition-all {
   transition-property: all;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
@@ -45,15 +41,86 @@ select {
   outline: none;
 }
 
-/* Clean focus states for better UX */
 button:focus-visible, 
 a:focus-visible {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
 
-/* Spinner animation for search loading */
+/* Spinner animation for loading states */
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
+}
+
+/* ── Horizontal scroll container (filter pills, tab bars on mobile) ── */
+.scroll-x {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  gap: 6px;
+}
+.scroll-x::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* ── Page fade-up animation ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.page-enter {
+  animation: fadeUp 0.35s ease both;
+}
+
+/* ── Mobile bottom navigation bar ── */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+    z-index: 60;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0 8px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Add padding so content isn't hidden behind bottom nav */
+  .main-content-mobile {
+    padding-bottom: 80px !important;
+  }
+
+  /* Smaller page headings on mobile */
+  .page-heading-mobile {
+    font-size: 22px !important;
+  }
+
+  /* Tighter horizontal padding on mobile */
+  .page-padding-mobile {
+    padding: 16px 14px !important;
+  }
+}
+
+/* ── Utility: hide on mobile / hide on desktop ── */
+@media (max-width: 767px) {
+  .hide-mobile { display: none !important; }
+}
+@media (min-width: 768px) {
+  .hide-desktop { display: none !important; }
+  .mobile-bottom-nav { display: none !important; }
 }
