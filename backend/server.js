@@ -15,16 +15,35 @@ connectDB();
 // Initialize app
 const app = express();
 
-// Middleware
+// ── Health check — NO CORS, always responds (used for wake-up ping) ──
+app.get("/api/health", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    timestamp: new Date().toISOString(),
+    uptime: Math.floor(process.uptime()),
+  });
+});
+
+// ── CORS — allow any *.vercel.app subdomain + localhost ──
+const allowedOrigins = [
+  /^https:\/\/.*\.vercel\.app$/,   // all vercel preview & prod URLs
+  /^http:\/\/localhost:\d+$/,       // local dev
+];
+
 app.use(
   cors({
-    origin: [
-      process.env.CLIENT_URL || "http://localhost:5173",
-      "https://team-task-manager-one.vercel.app",
-    ],
+    origin: (origin, callback) => {
+      // allow server-to-server (no origin) or matching origins
+      if (!origin || allowedOrigins.some((pattern) => pattern.test(origin))) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`));
+      }
+    },
     credentials: true,
   })
 );
+
 app.use(express.json());
 
 // Routes
@@ -33,7 +52,6 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/projects", require("./routes/projectRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
-app.use("/api/health", require("./routes/healthRoutes"));
 
 // Root route
 app.get("/", (req, res) => {
