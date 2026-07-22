@@ -26,7 +26,14 @@ const Register = () => {
       login(response.data);
       navigate("/");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      // No response = network error / Render cold-start
+      if (!err.response) {
+        setError(
+          "The server is waking up — please wait a few seconds and try again."
+        );
+      } else {
+        setError(err.response?.data?.message || "Registration failed");
+      }
     } finally {
       setLoading(false);
     }

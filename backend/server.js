@@ -33,6 +33,7 @@ app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/projects", require("./routes/projectRoutes"));
 app.use("/api/tasks", require("./routes/taskRoutes"));
 app.use("/api/dashboard", require("./routes/dashboardRoutes"));
+app.use("/api/health", require("./routes/healthRoutes"));
 
 // Root route
 app.get("/", (req, res) => {
